@@ -1,0 +1,54 @@
+{
+  "name": "google-measurement-mcp",
+  "version": "0.1.0",
+  "description": "MCP server for the Google measurement stack — GA4, Search Console, and Tag Manager in one server. Read tools always on, write tools behind an explicit flag, destructive operations omitted by design.",
+  "keywords": [
+    "mcp",
+    "modelcontextprotocol",
+    "mcp-server",
+    "google-analytics",
+    "ga4",
+    "analytics",
+    "search-console",
+    "gsc",
+    "google-search-console",
+    "tag-manager",
+    "gtm",
+    "google-tag-manager",
+    "seo",
+    "measurement",
+    "claude",
+    "cursor"
+  ],
+  "license": "Apache-2.0",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "bin": {
+    "google-measurement-mcp": "dist/index.js"
+  },
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist/",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc --watch",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "prepublishOnly": "npm run build"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0",
+    "googleapis": "^144.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.6.0",
+    "vitest": "^2.1.0"
+  }
+}
