@@ -1,0 +1,35 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+*.tsbuildinfo
+
+# Credentials — NOTHING resembling a Google service account key may ever be committed.
+# See §5: auth is via GOOGLE_APPLICATION_CREDENTIALS pointing at a file outside the repo.
+*.pem
+*.key
+*-credentials.json
+*-service-account*.json
+service-account*.json
+gcp-*.json
+credentials.json
+client_secret*.json
+.env
+.env.*
+!.env.example
+
+# Test artifacts
+coverage/
+.vitest/
+
+# Editor / OS
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+
+# Logs
+*.log
+npm-debug.log*
