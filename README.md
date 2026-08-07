@@ -33,19 +33,30 @@ In the [Google Cloud console](https://console.cloud.google.com/), create a proje
 - Google Search Console API
 - Tag Manager API
 
-### 2. Create an OAuth client
+### 2. Configure the consent screen
 
-**APIs & Services → Credentials → Create credentials → OAuth client ID → Desktop app.** Note the client ID and secret.
+**APIs & Services → OAuth consent screen.** Google has migrated this to **Google Auth Platform**, where the settings are split across left-nav pages — *Branding*, *Audience*, *Clients*, *Data Access*. Set user type **External** and your email as both contacts.
 
-### 3. ⚠️ Set your consent screen to "In Production"
-
-**APIs & Services → OAuth consent screen → Publishing status → Publish app.**
-
-> **This step is not optional.** If you leave the status as **Testing**, Google expires your login after **7 days** and you will have to sign in again every week.
+> **Do not name the app `google-measurement-mcp`.** Google rejects any OAuth app name containing "Google" with a message that doesn't explain why:
+> *"The request failed because the app name does not comply with Google's requirements."*
 >
-> Publishing is *not* the same as Google verification. You are the only user of your own OAuth client, so there is no review, no security audit, and no waiting. You will see a one-time "Google hasn't verified this app" screen — that is expected. Click **Advanced → Go to (unsafe)**. It is your own app.
+> Name it **`Measurement MCP`** instead. It's only the label on your own consent screen and has nothing to do with the package name.
 
-### 4. Configure your MCP client
+### 3. ⚠️ Publish the app — do not skip this
+
+**Google Auth Platform → Audience → Publish app.** (Older UI: OAuth consent screen → Publishing status.)
+
+> If you leave the status as **Testing**, Google expires your login after **7 days** and you will have to sign in again every week.
+>
+> Publishing is *not* Google verification. You are the only user of your own OAuth client, so there is no review, no security audit, and no waiting. You will see a one-time "Google hasn't verified this app" screen — that is expected. Click **Advanced → Go to (unsafe)**. It is your own app.
+
+### 4. Create an OAuth client
+
+**Google Auth Platform → Clients → Create OAuth client → Application type: Desktop app.** (Older UI: APIs & Services → Credentials → Create credentials → OAuth client ID.)
+
+Note the client ID and secret. **Desktop app** matters — a "Web application" client fails with `redirect_uri_mismatch`.
+
+### 5. Configure your MCP client
 
 ```json
 {
@@ -62,7 +73,7 @@ In the [Google Cloud console](https://console.cloud.google.com/), create a proje
 }
 ```
 
-### 5. Sign in once
+### 6. Sign in once
 
 Run the server once in a terminal. It prints a URL — open it, approve, done. The refresh token is cached at `~/.config/google-measurement-mcp/` with owner-only permissions, and your MCP client picks it up from then on.
 
@@ -198,8 +209,14 @@ These are omitted deliberately. An agent cannot call what does not exist.
 
 ## Troubleshooting
 
+**"The app name does not comply with Google's requirements"**
+Your OAuth app name contains "Google", which Google's branding policy prohibits. Rename it to `Measurement MCP`. This is a consent-screen display label only and is unrelated to the package name.
+
 **"Your saved Google login is no longer valid"**
-Most likely your consent screen is still in **Testing** (7-day token expiry) — see [step 3](#3-️-set-your-consent-screen-to-in-production). Other causes: more than 25 saved logins for one OAuth client, a clock out of sync, or access revoked from your Google account page.
+Most likely your consent screen is still in **Testing** (7-day token expiry) — see [step 4](#4-️-set-your-consent-screen-to-in-production). Other causes: more than 25 saved logins for one OAuth client, a clock out of sync, or access revoked from your Google account page.
+
+**`redirect_uri_mismatch`**
+Your OAuth client is a "Web application" type. Create a **Desktop app** client instead.
 
 **"Permission denied"**
 The signed-in identity lacks access to that property, site, or container — or the relevant API is not enabled in your Cloud project. On the service-account path, confirm all three grants were made.

@@ -185,6 +185,13 @@ async function runConsentFlow(
           const code = url.searchParams.get("code");
           const error = url.searchParams.get("error");
 
+          // Ignore stray hits (favicon, prefetch) so they don't abort the flow.
+          if (!code && !error) {
+            res.writeHead(204);
+            res.end();
+            return;
+          }
+
           res.writeHead(200, { "Content-Type": "text/plain; charset=utf-8" });
           res.end(
             error
@@ -198,13 +205,9 @@ async function runConsentFlow(
             reject(new AuthError(`Google sign-in was refused: ${error}`));
             return;
           }
-          if (!code) {
-            reject(new AuthError("Google sign-in returned no authorization code."));
-            return;
-          }
 
           try {
-            const { tokens } = await client.getToken(code);
+            const { tokens } = await client.getToken(code!);
             client.setCredentials(tokens);
             if (!tokens.refresh_token) {
               reject(

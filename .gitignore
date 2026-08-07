@@ -5,8 +5,9 @@ node_modules/
 dist/
 *.tsbuildinfo
 
-# Credentials — NOTHING resembling a Google service account key may ever be committed.
-# See §5: auth is via GOOGLE_APPLICATION_CREDENTIALS pointing at a file outside the repo.
+# Credentials — NOTHING resembling a Google service account key or OAuth client
+# secret may ever be committed. Keep keys/tokens outside the repo
+# (GOOGLE_APPLICATION_CREDENTIALS / ~/.config/google-measurement-mcp/).
 *.pem
 *.key
 *-credentials.json
@@ -15,6 +16,8 @@ service-account*.json
 gcp-*.json
 credentials.json
 client_secret*.json
+**/client_secret*
+token-*.json
 .env
 .env.*
 !.env.example
