@@ -221,6 +221,17 @@ Your OAuth client is a "Web application" type. Create a **Desktop app** client i
 **"Permission denied"**
 The signed-in identity lacks access to that property, site, or container — or the relevant API is not enabled in your Cloud project. On the service-account path, confirm all three grants were made.
 
+**One API works but another returns nothing (e.g. GA4 fine, Tag Manager empty)**
+Your GA4, Search Console and Tag Manager assets are probably split across different Google accounts. `gtm_list_accounts` returning **0 rather than an error** is the tell — the call succeeded, there was simply nothing that identity could see.
+
+**Do not re-authenticate as the other account.** That usually just moves the problem, forfeiting access to whichever APIs currently work. Instead grant your existing identity access to the missing asset:
+
+- **Tag Manager** → Admin → User Management → add your email
+- **GA4** → Admin → Property access management → add your email
+- **Search Console** → Settings → Users and permissions → add your email
+
+No re-authentication needed; the scopes are already granted. Permission changes take a minute or two to propagate.
+
 **"Google quota exhausted"**
 Search Console URL Inspection is capped at 2,000/day and 600/minute per property. The Tag Manager API has strict per-user limits — space GTM calls out by minutes, not seconds.
 
