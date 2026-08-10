@@ -23,6 +23,9 @@ import { createGa4DataTools } from "./tools/ga4-data.js";
 import { createGa4AdminTools } from "./tools/ga4-admin.js";
 import { createGscTools } from "./tools/gsc.js";
 import { createGtmTools } from "./tools/gtm.js";
+import { createGa4AdminWriteTools } from "./tools/ga4-admin-write.js";
+import { createGscWriteTools } from "./tools/gsc-write.js";
+import { createGtmWriteTools } from "./tools/gtm-write.js";
 import type { ToolDefinition } from "./schemas/index.js";
 
 const PKG_NAME = "google-measurement-mcp";
@@ -100,7 +103,15 @@ async function main(): Promise<void> {
     ...createGscTools(getClient, config),
     ...createGtmTools(getClient, config),
   ];
-  const writeTools: ToolDefinition[] = [];
+  // Built only when the flag is on. Constructing them unconditionally would
+  // risk a future refactor leaking them into the read registry.
+  const writeTools: ToolDefinition[] = config.writeEnabled
+    ? [
+        ...createGa4AdminWriteTools(getClient, config),
+        ...createGscWriteTools(getClient, config),
+        ...createGtmWriteTools(getClient, config),
+      ]
+    : [];
 
   // Guard against a copy-paste mistake registering the same name twice, and
   // against a write tool being added to the read list by accident.
@@ -115,6 +126,12 @@ async function main(): Promise<void> {
   if (misfiled.length) {
     throw new Error(
       `Tools marked write:true are in the read registry: ${misfiled.map((t) => t.name).join(", ")}`,
+    );
+  }
+  const mislabelled = writeTools.filter((t) => !t.write);
+  if (mislabelled.length) {
+    throw new Error(
+      `Tools in the write registry are not marked write:true: ${mislabelled.map((t) => t.name).join(", ")}`,
     );
   }
 

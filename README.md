@@ -183,11 +183,43 @@ The startup line on stderr tells you which one resolved.
 
 ## Tools
 
-| Tool | Does | Access | Reversible |
-|---|---|---|---|
-| `ga4_run_report` | Runs a GA4 report, returns flat rows | Read | n/a |
+### Read — always available (15)
+
+| Tool | Does |
+|---|---|
+| `ga4_list_account_summaries` | Accounts and properties. **Start here** to find a propertyId |
+| `ga4_run_report` | GA4 report, returned as flat rows |
+| `ga4_run_realtime_report` | Last ~30 minutes |
+| `ga4_list_custom_dimensions` | Custom dimensions with scope |
+| `ga4_list_key_events` | Key events with counting method |
+| `gsc_list_sites` | Search Console properties. **Start here** for a siteUrl |
+| `gsc_search_analytics_query` | Clicks, impressions, CTR, position |
+| `gsc_list_sitemaps` | Submitted sitemaps with warnings and errors |
+| `gsc_inspect_url` | Index status for one URL (quota: 2,000/day per property) |
+| `gtm_list_accounts` | GTM accounts. **Start here** for an accountId |
+| `gtm_list_containers` | Containers — note `containerId` (numeric) vs `publicId` (GTM-XXXXXXX) |
+| `gtm_list_workspaces` | Workspaces in a container |
+| `gtm_list_tags` | Tags with type, triggers and parameters |
+| `gtm_list_triggers` | Triggers with firing conditions |
+| `gtm_list_variables` | User-defined variables |
 
 Responses are capped at 25 rows by default. When output is clipped you get `truncated: true` plus guidance — prefer narrowing the query over raising `limit`.
+
+### Write — only with `--enable-write` (9)
+
+| Tool | Does | Reversible |
+|---|---|---|
+| `ga4_create_custom_dimension` | Creates a custom dimension | **No** — archive-only, and slots are limited |
+| `ga4_create_key_event` | Marks an event as a key event | Yes, from the GA4 UI |
+| `ga4_update_key_event` | Changes counting method | Yes |
+| `gsc_submit_sitemap` | Submits a sitemap URL | Yes, from the Search Console UI |
+| `gtm_create_tag` | Creates a tag in a workspace | Yes — not live until published |
+| `gtm_update_tag` | Replaces a tag's config | Yes — not live until published |
+| `gtm_create_trigger` | Creates a trigger in a workspace | Yes — not live until published |
+| `gtm_create_version` | Snapshots a workspace into a version | Safe — creating ≠ publishing |
+| `gtm_publish_version` | **Publishes to the live site** | Yes, via GTM version history |
+
+`gtm_update_tag` is a full replacement, not a patch — omitted fields are cleared.
 
 ---
 
@@ -202,8 +234,31 @@ These are omitted deliberately. An agent cannot call what does not exist.
 **Also:**
 
 - GTM writes operate on a **workspace**, never directly on the live container.
-- `gtm_publish_version` requires `confirm: true`; without it you get a diff and nothing publishes.
 - GTM keeps version history, so a publish can be rolled back from the GTM UI.
+
+### The publish confirm gate
+
+`gtm_publish_version` is the only operation here that changes a live website. It requires `confirm: true`.
+
+Called without it, the tool performs a **dry run**: it fetches the version that would go live, diffs it against the currently live version, and returns a summary — naming tags, triggers and variables added or removed. It publishes nothing.
+
+```jsonc
+// confirm omitted -> nothing published
+{
+  "published": false,
+  "dryRun": true,
+  "wouldPublish": { "containerVersionId": "7", "tagCount": 3 },
+  "currentlyLive": { "containerVersionId": "6", "tagCount": 3 },
+  "delta": { "tags": { "added": ["Tag NEW"], "removed": ["Tag GONE"], "unchangedCount": 2 } },
+  "instruction": "NOTHING WAS PUBLISHED. Show this summary to a human..."
+}
+```
+
+This is verified by a spy test asserting the publish API is never invoked without `confirm: true` — including when `confirm` is a truthy non-boolean like `"true"` or `1`, which validation rejects:
+
+```bash
+node scripts/verify-confirm-gate.mjs
+```
 
 ---
 

@@ -357,10 +357,100 @@ if (PROPERTY) {
 }
 
 // --- write mode ---
-console.log("\n--- Write mode (scope assembly only; no writes performed) ---");
+console.log("\n--- Write mode (registration + gating only; NO writes performed) ---");
+
+const EXPECTED_WRITE_TOOLS = [
+  "ga4_create_custom_dimension",
+  "ga4_create_key_event",
+  "ga4_update_key_event",
+  "gsc_submit_sitemap",
+  "gtm_create_tag",
+  "gtm_update_tag",
+  "gtm_create_trigger",
+  "gtm_create_version",
+  "gtm_publish_version",
+];
+
+// Deliberately never implemented (handover D5). Asserting their ABSENCE is the
+// point — this list must stay in sync with the README's safety section.
+const FORBIDDEN_TOOLS = [
+  "ga4_delete_key_event",
+  "ga4_archive_custom_dimension",
+  "gsc_delete_sitemap",
+  "gsc_add_site",
+  "gsc_delete_site",
+  "gtm_delete_tag",
+  "gtm_delete_trigger",
+  "gtm_delete_variable",
+  "gtm_delete_container",
+  "gtm_delete_version",
+];
+
 const write = await runServer(["--enable-write"], {}, [
   { jsonrpc: "2.0", id: 2, method: "tools/list", params: {} },
 ]);
+
+const writeList = write.messages.find((m) => m.id === 2);
+if (writeList?.result?.tools) {
+  const names = writeList.result.tools.map((t) => t.name);
+  const expectedAll = [...EXPECTED_READ_TOOLS, ...EXPECTED_WRITE_TOOLS];
+
+  const missing = expectedAll.filter((n) => !names.includes(n));
+  const unexpected = names.filter((n) => !expectedAll.includes(n));
+  record(
+    "write mode exposes exactly read + write tools",
+    missing.length === 0 && unexpected.length === 0 ? "PASS" : "FAIL",
+    missing.length || unexpected.length
+      ? `missing: [${missing.join(", ")}] unexpected: [${unexpected.join(", ")}]`
+      : `${names.length} tools (${EXPECTED_READ_TOOLS.length} read + ${EXPECTED_WRITE_TOOLS.length} write)`,
+  );
+
+  const forbidden = FORBIDDEN_TOOLS.filter((n) => names.includes(n));
+  record(
+    "destructive tools absent even in write mode",
+    forbidden.length === 0 ? "PASS" : "FAIL",
+    forbidden.length ? `PRESENT: ${forbidden.join(", ")}` : `none of ${FORBIDDEN_TOOLS.length} forbidden names`,
+  );
+
+  // Every write tool must declare its impact and reversibility up front, so an
+  // agent reading tools/list can weigh the call before making it.
+  const writeTools = writeList.result.tools.filter((t) => EXPECTED_WRITE_TOOLS.includes(t.name));
+  const noImpact = writeTools.filter(
+    (t) => !/^(CHANGES|PUBLISHES)/.test(t.description ?? ""),
+  );
+  record(
+    "write descriptions open with impact",
+    noImpact.length === 0 ? "PASS" : "FAIL",
+    noImpact.length ? `missing: ${noImpact.map((t) => t.name).join(", ")}` : "all declare CHANGES/PUBLISHES",
+  );
+
+  const noReversibility = writeTools.filter(
+    (t) => !/REVERSIBLE|NOT REVERSIBLE|SAFE/i.test(t.description ?? ""),
+  );
+  record(
+    "write descriptions state reversibility",
+    noReversibility.length === 0 ? "PASS" : "FAIL",
+    noReversibility.length ? `missing: ${noReversibility.map((t) => t.name).join(", ")}` : "all state reversibility",
+  );
+
+  // The D6 gate, asserted at the schema level.
+  const publish = writeTools.find((t) => t.name === "gtm_publish_version");
+  const confirmProp = publish?.inputSchema?.properties?.confirm;
+  record(
+    "gtm_publish_version declares a confirm parameter",
+    confirmProp && confirmProp.type === "boolean" ? "PASS" : "FAIL",
+    confirmProp ? "boolean confirm present" : "MISSING — the D6 gate is not declared",
+  );
+  record(
+    "gtm_publish_version warns against self-approval",
+    /do not set confirm: true on your own initiative/i.test(publish?.description ?? "")
+      ? "PASS"
+      : "FAIL",
+    "description must tell the agent not to self-approve",
+  );
+} else {
+  record("write mode exposes exactly read + write tools", "FAIL", "no response");
+}
 
 const writeNotice = write.stderr.split("\n").find((l) => l.includes("WRITE TOOLS ENABLED"));
 record("write mode announces itself", writeNotice ? "PASS" : "FAIL", writeNotice?.trim().slice(0, 90) ?? "no stderr notice");
