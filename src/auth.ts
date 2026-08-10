@@ -17,7 +17,22 @@ import type { AddressInfo } from "node:net";
 import { google } from "googleapis";
 import type { OAuth2Client } from "google-auth-library";
 import type { AuthMode, Config } from "./config.js";
-import { AuthError, mapGoogleError } from "./errors.js";
+import { AuthError, PermissionError, mapGoogleError } from "./errors.js";
+
+/** Strip the googleapis auth prefix for human-readable scope lists. */
+function shortScope(scope: string): string {
+  return scope.replace(/^https:\/\/www\.googleapis\.com\/auth\//, "");
+}
+
+/**
+ * Return required scopes that are absent from a space-delimited granted list.
+ * An empty/missing granted string is treated as granting nothing — safer than
+ * assuming an old token file without a `scope` field is fully privileged.
+ */
+export function missingScopes(granted: string | undefined, required: readonly string[]): string[] {
+  const have = new Set((granted ?? "").split(/\s+/).filter(Boolean));
+  return required.filter((s) => !have.has(s));
+}
 
 /**
  * Verified 2026-08-06.
@@ -296,8 +311,26 @@ export async function getAuthClient(
 
       try {
         await client.getAccessToken();
+
+        // Cached tokens are minted for whatever scopes were granted at consent
+        // time. A read-mode login must not silently power write mode — that
+        // surfaces later as a confusing Google 403 (GMCP-02 §7.4).
+        const shortfall = missingScopes(stored.scope, scopes);
+        if (shortfall.length > 0) {
+          const missing = shortfall.map(shortScope).join(", ");
+          const remedy =
+            mode === "write"
+              ? "Delete the cached token (or revoke the app at https://myaccount.google.com/permissions), then re-run the server once with --enable-write so the consent screen can grant write scopes."
+              : "Delete the cached token and re-run the server once in a terminal to sign in again.";
+          throw new PermissionError(
+            `Saved Google login is missing required scopes for ${mode} mode: ${missing}.`,
+            remedy,
+          );
+        }
+
         return { client, source: "oauth", scopes };
       } catch (err) {
+        if (err instanceof PermissionError) throw err;
         // Routes invalid_grant to the multi-cause remedy in errors.ts.
         if (!interactive) throw mapGoogleError(err, "refresh your saved Google login");
       }

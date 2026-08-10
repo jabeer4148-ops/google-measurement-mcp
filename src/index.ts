@@ -16,7 +16,7 @@ import {
   ListToolsRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js";
 import type { OAuth2Client } from "google-auth-library";
-import { describeSource, getAuthClient } from "./auth.js";
+import { describeSource, getAuthClient, scopesFor } from "./auth.js";
 import { loadConfig } from "./config.js";
 import { GmcpError, mapGoogleError } from "./errors.js";
 import { createGa4DataTools } from "./tools/ga4-data.js";
@@ -72,10 +72,13 @@ async function main(): Promise<void> {
     return cached;
   };
 
+  let resolvedScopes: string[] = [];
+
   try {
     const resolved = await getAuthClient(config.mode, config, { interactive: true });
     cached = resolved.client;
     sourceLabel = describeSource(resolved.source);
+    resolvedScopes = resolved.scopes;
   } catch (err) {
     // Do not exit. The server still starts so the client can connect and show a
     // useful error on first tool call rather than a bare transport failure.
@@ -102,6 +105,16 @@ async function main(): Promise<void> {
       `Credentials: ${sourceLabel}. ` +
       `Mode: ${config.writeEnabled ? "READ+WRITE" : "read-only"}. ` +
       `Tools: ${tools.length}.\n`,
+  );
+
+  // Always report the assembled scopes. This is a diagnostic users need when a
+  // write call 403s, and it gives the verification harness something to assert
+  // on that does not depend on an error path.
+  const scopeSuffixes = (resolvedScopes.length ? resolvedScopes : scopesFor(config.mode)).map((s) =>
+    s.replace("https://www.googleapis.com/auth/", ""),
+  );
+  process.stderr.write(
+    `[${PKG_NAME}] Scopes (${scopeSuffixes.length}): ${scopeSuffixes.join(" ")}\n`,
   );
 
   if (config.writeEnabled) {

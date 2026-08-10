@@ -105,7 +105,10 @@ export function createGa4DataTools(
       title: "Run a GA4 report",
       description:
         "Runs a Google Analytics 4 report and returns rows as flat objects. " +
-        "Requires a numeric GA4 propertyId — call ga4_list_account_summaries first if you do not have one. " +
+        "Requires the NUMERIC GA4 propertyId (e.g. 543399494), not the G-XXXXXXX measurement ID. " +
+        "If the user does not know it, it appears in any GA4 URL as the digits after 'p' " +
+        "(analytics.google.com/analytics/web/#/a<account>p<property>/...), or under " +
+        "GA4 Admin -> Property details -> PROPERTY ID. " +
         "Returns at most 25 rows unless `limit` is raised; prefer narrowing the date range or dimensions over raising it. " +
         "Read-only.",
       inputSchema: ga4RunReportSchema as unknown as Record<string, unknown>,

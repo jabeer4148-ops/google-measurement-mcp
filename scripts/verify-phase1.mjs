@@ -298,18 +298,94 @@ const write = await runServer(["--enable-write"], {}, [
 const writeNotice = write.stderr.split("\n").find((l) => l.includes("WRITE TOOLS ENABLED"));
 record("write mode announces itself", writeNotice ? "PASS" : "FAIL", writeNotice?.trim().slice(0, 90) ?? "no stderr notice");
 
-const scopeLine = write.stderr.match(/--scopes=(\S+)/);
-if (scopeLine) {
-  const scopes = scopeLine[1].split(",");
-  const hasVersions = scopes.some((s) => s.includes("tagmanager.edit.containerversions"));
+// Assert on the dedicated Scopes: line, which the server always emits.
+//
+// The earlier version of this check parsed `--scopes=` out of the *failure*
+// message, so it silently stopped running once credentials resolved and was
+// replaced by a weaker assertion that still reported PASS. Never key a test on
+// a string that only appears on an error path.
+const writeScopeLine = write.stderr.match(/Scopes \((\d+)\): (.+)/);
+if (writeScopeLine) {
+  const scopes = writeScopeLine[2].trim().split(/\s+/);
+  const required = [
+    "analytics.readonly",
+    "webmasters.readonly",
+    "tagmanager.readonly",
+    "analytics.edit",
+    "webmasters",
+    "tagmanager.edit.containers",
+    "tagmanager.edit.containerversions",
+    "tagmanager.publish",
+  ];
+  const missing = required.filter((r) => !scopes.includes(r));
   record(
-    "write scopes include containerversions",
-    hasVersions ? "PASS" : "FAIL",
-    `${scopes.length} scopes assembled`,
+    "write scopes complete (incl. containerversions)",
+    missing.length === 0 ? "PASS" : "FAIL",
+    missing.length ? `MISSING: ${missing.join(", ")}` : `all ${scopes.length} present`,
+  );
+
+  // Destructive scopes must never be requested, even in write mode (handover D5).
+  const forbidden = [
+    "tagmanager.delete.containers",
+    "tagmanager.manage.users",
+    "tagmanager.manage.accounts",
+    "analytics.manage.users",
+    "analytics.provision",
+    "analytics.user.deletion",
+  ];
+  const leaked = forbidden.filter((f) => scopes.includes(f));
+  record(
+    "no destructive scopes requested",
+    leaked.length === 0 ? "PASS" : "FAIL",
+    leaked.length ? `LEAKED: ${leaked.join(", ")}` : "none present, as expected",
   );
 } else {
-  const wCred = write.stderr.split("\n").find((l) => l.includes("Credentials:"));
-  record("write mode credentials", wCred && !wCred.includes("unresolved") ? "PASS" : "SKIP", wCred?.match(/Credentials: ([^.]+)\./)?.[1] ?? "not resolved");
+  record("write scopes complete (incl. containerversions)", "FAIL", "no Scopes: line emitted — server may be stale, rebuild");
+}
+
+// Read mode must NOT request write scopes.
+const readScopeLine = read.stderr.match(/Scopes \((\d+)\): (.+)/);
+if (readScopeLine) {
+  const scopes = readScopeLine[2].trim().split(/\s+/);
+  const writeOnly = scopes.filter((s) => /\.edit|\.publish|^webmasters$/.test(s));
+  record(
+    "read mode requests no write scopes",
+    writeOnly.length === 0 ? "PASS" : "FAIL",
+    writeOnly.length ? `LEAKED: ${writeOnly.join(", ")}` : `${scopes.length} read-only scopes`,
+  );
+} else {
+  record("read mode requests no write scopes", "FAIL", "no Scopes: line emitted — rebuild");
+}
+
+// Does the cached token actually carry the scopes write mode needs?
+// A token minted for read scopes must NOT resolve write mode — §7.4.
+if (existsSync(tokenFile)) {
+  try {
+    const t = JSON.parse(readFileSync(tokenFile, "utf8"));
+    const granted = (t.scope ?? "").split(/\s+/).filter(Boolean).map((s) => s.replace("https://www.googleapis.com/auth/", ""));
+    const needsForWrite = ["analytics.edit", "tagmanager.publish", "tagmanager.edit.containerversions"];
+    const absent = needsForWrite.filter((s) => !granted.includes(s));
+    if (absent.length) {
+      const rejected = /missing required scopes for write mode/i.test(write.stderr);
+      record(
+        "write mode rejects underscoped cached token",
+        rejected ? "PASS" : "FAIL",
+        rejected
+          ? `PermissionError raised for missing: ${absent.join(", ")}`
+          : "expected PermissionError on write startup with read-only token — rebuild?",
+      );
+      record(
+        "cached token scope coverage",
+        "SKIP",
+        `read-only token (missing ${absent.length} write scopes) — re-auth with --enable-write before write mode works`,
+      );
+    } else {
+      record("write mode rejects underscoped cached token", "SKIP", "token already carries write scopes");
+      record("cached token scope coverage", "PASS", "token carries write scopes");
+    }
+  } catch {
+    /* already reported above */
+  }
 }
 
 // ------------------------------------------------------------------- summary
