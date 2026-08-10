@@ -230,18 +230,85 @@ if (credLine) {
   record("credentials resolved", "FAIL", "no startup line captured");
 }
 
+const EXPECTED_READ_TOOLS = [
+  "ga4_run_report",
+  "ga4_run_realtime_report",
+  "ga4_list_account_summaries",
+  "ga4_list_custom_dimensions",
+  "ga4_list_key_events",
+  "gsc_list_sites",
+  "gsc_search_analytics_query",
+  "gsc_list_sitemaps",
+  "gsc_inspect_url",
+  "gtm_list_accounts",
+  "gtm_list_containers",
+  "gtm_list_workspaces",
+  "gtm_list_tags",
+  "gtm_list_triggers",
+  "gtm_list_variables",
+];
+
 const listMsg = read.messages.find((m) => m.id === 2);
 if (listMsg?.result?.tools) {
-  const names = listMsg.result.tools.map((t) => t.name);
-  record("tools/list (read mode)", "PASS", names.join(", "));
-  const writeLeak = names.filter((n) => /create|update|publish|submit|delete/.test(n));
+  const tools = listMsg.result.tools;
+  const names = tools.map((t) => t.name);
+
+  // Assert by explicit name list, not a count or snapshot. A snapshot silently
+  // absorbs a tool that should not be there (GMCP-02 §7.3 lesson).
+  const missing = EXPECTED_READ_TOOLS.filter((n) => !names.includes(n));
+  const unexpected = names.filter((n) => !EXPECTED_READ_TOOLS.includes(n));
+  record(
+    "tools/list matches expected read surface",
+    missing.length === 0 && unexpected.length === 0 ? "PASS" : "FAIL",
+    missing.length || unexpected.length
+      ? `missing: [${missing.join(", ")}] unexpected: [${unexpected.join(", ")}]`
+      : `all ${names.length} present`,
+  );
+
+  const writeLeak = names.filter((n) => /_create|_update|_publish|_submit|_delete|_archive/.test(n));
   record(
     "no write tools exposed",
     writeLeak.length === 0 ? "PASS" : "FAIL",
     writeLeak.length ? `LEAKED: ${writeLeak.join(", ")}` : "none present, as expected",
   );
+
+  // Every tool must ship a usable schema — registration referencing the schema
+  // object is the D8 contract, and an empty one silently breaks agent calling.
+  const badSchema = tools.filter(
+    (t) =>
+      !t.inputSchema ||
+      t.inputSchema.type !== "object" ||
+      typeof t.inputSchema.properties !== "object",
+  );
+  record(
+    "every tool declares an object schema",
+    badSchema.length === 0 ? "PASS" : "FAIL",
+    badSchema.length ? `bad: ${badSchema.map((t) => t.name).join(", ")}` : `${tools.length} schemas valid`,
+  );
+
+  // Descriptions are the agent's only guidance. Empty or terse ones cause
+  // mis-calls that look like tool bugs.
+  const thin = tools.filter((t) => !t.description || t.description.length < 60);
+  record(
+    "every tool has a substantive description",
+    thin.length === 0 ? "PASS" : "FAIL",
+    thin.length ? `thin: ${thin.map((t) => t.name).join(", ")}` : "all >= 60 chars",
+  );
+
+  // Tools requiring an identifier should say where to get it.
+  const discovery = tools.filter((t) =>
+    ["ga4_run_report", "gsc_search_analytics_query", "gtm_list_containers"].includes(t.name),
+  );
+  const noPointer = discovery.filter(
+    (t) => !/ga4_list_account_summaries|gsc_list_sites|gtm_list_accounts|Property details/i.test(t.description),
+  );
+  record(
+    "id-requiring tools point at a discovery tool",
+    noPointer.length === 0 ? "PASS" : "FAIL",
+    noPointer.length ? `no pointer: ${noPointer.map((t) => t.name).join(", ")}` : "all cross-referenced",
+  );
 } else {
-  record("tools/list (read mode)", "FAIL", "no response");
+  record("tools/list matches expected read surface", "FAIL", "no response");
 }
 
 const badId = read.messages.find((m) => m.id === 3);

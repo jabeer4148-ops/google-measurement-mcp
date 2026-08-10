@@ -20,6 +20,9 @@ import { describeSource, getAuthClient, scopesFor } from "./auth.js";
 import { loadConfig } from "./config.js";
 import { GmcpError, mapGoogleError } from "./errors.js";
 import { createGa4DataTools } from "./tools/ga4-data.js";
+import { createGa4AdminTools } from "./tools/ga4-admin.js";
+import { createGscTools } from "./tools/gsc.js";
+import { createGtmTools } from "./tools/gtm.js";
 import type { ToolDefinition } from "./schemas/index.js";
 
 const PKG_NAME = "google-measurement-mcp";
@@ -91,8 +94,29 @@ async function main(): Promise<void> {
 
   // Registry. The write-gate branch is in place now so Phase 3 slots in without
   // restructuring, even though no write tools exist yet.
-  const readTools: ToolDefinition[] = [...createGa4DataTools(getClient, config)];
+  const readTools: ToolDefinition[] = [
+    ...createGa4DataTools(getClient, config),
+    ...createGa4AdminTools(getClient, config),
+    ...createGscTools(getClient, config),
+    ...createGtmTools(getClient, config),
+  ];
   const writeTools: ToolDefinition[] = [];
+
+  // Guard against a copy-paste mistake registering the same name twice, and
+  // against a write tool being added to the read list by accident.
+  const seen = new Set<string>();
+  for (const tool of [...readTools, ...writeTools]) {
+    if (seen.has(tool.name)) {
+      throw new Error(`Duplicate tool name registered: ${tool.name}`);
+    }
+    seen.add(tool.name);
+  }
+  const misfiled = readTools.filter((t) => t.write);
+  if (misfiled.length) {
+    throw new Error(
+      `Tools marked write:true are in the read registry: ${misfiled.map((t) => t.name).join(", ")}`,
+    );
+  }
 
   const tools: ToolDefinition[] = config.writeEnabled
     ? [...readTools, ...writeTools]
