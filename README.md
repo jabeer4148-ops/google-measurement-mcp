@@ -219,7 +219,19 @@ Responses are capped at 25 rows by default. When output is clipped you get `trun
 | `gtm_create_version` | Snapshots a workspace into a version | Safe — creating ≠ publishing |
 | `gtm_publish_version` | **Publishes to the live site** | Yes, via GTM version history |
 
-`gtm_update_tag` is a full replacement, not a patch — omitted fields are cleared.
+**`gtm_update_tag` merges — omission preserves, explicit empty clears.**
+
+The raw GTM API *replaces*: omitting `firingTriggerId` silently empties it, leaving a tag that looks completely normal in the GTM UI and never fires. We verified that against the live API, then made this server read-then-merge so it cannot happen by accident.
+
+```jsonc
+// changes the name, keeps everything else
+{ "tagPath": "...", "name": "New name", "type": "html" }
+
+// deliberately unwires the tag from all triggers
+{ "tagPath": "...", "name": "New name", "type": "html", "firingTriggerId": [] }
+```
+
+`parameter` merges by key, so you can change one parameter without resending the rest. The response lists `preservedFields` so you can see what was carried over.
 
 ---
 
@@ -304,6 +316,19 @@ Expected unless you passed `--enable-write` or set `GMCP_ENABLE_WRITE=1`. Re-aut
 - [ ] **Phase 5** — npm release
 
 ---
+
+## Development
+
+```bash
+npm install
+npm run build
+npm test                              # 73 contract tests, no network, no credentials
+node scripts/verify-confirm-gate.mjs  # 17 assertions on the publish gate
+```
+
+Contract tests stub the Google clients and assert on call behaviour, so they run anywhere including CI. The safety-critical ones live in `test/contract/safety.test.ts` — a failure there is a release blocker.
+
+`docs/GMCP-05-traceability.md` maps every tool to its API method, scope, reversibility, quota and covering tests, and lists the known gaps.
 
 ## Requirements
 

@@ -135,10 +135,14 @@ export function createGtmWriteTools(
       description:
         "CHANGES A WORKSPACE. Replaces the configuration of an existing tag. " +
         "REVERSIBLE: affects only the workspace until published, and GTM keeps version history. " +
-        "ALWAYS call gtm_list_tags first and resend every field you want to keep. Two reasons: " +
-        "(1) type-required parameters must be present — omitting `parameter` on a Custom HTML tag is rejected with " +
-        "'vendorTemplate.parameter.html: The value must not be empty' (confirmed against the live API); " +
-        "(2) the endpoint replaces rather than patches, so optional fields you omit are expected to be cleared. " +
+        "CHANGES A WORKSPACE. Updates a tag, MERGING your changes over its current configuration. " +
+        "REVERSIBLE: workspace-only until published, and GTM keeps version history. " +
+        "Fields you omit are PRESERVED — this server fetches the current tag and merges, because the raw GTM API " +
+        "replaces instead, which silently clears omitted fields. (Verified: omitting firingTriggerId on the raw API " +
+        "empties it, leaving a tag that looks normal in the GTM UI but never fires.) " +
+        "To deliberately CLEAR a field, pass it explicitly as an empty array — e.g. firingTriggerId: [] unwires the " +
+        "tag from all triggers. Omission preserves; explicit empty clears. " +
+        "`parameter` is merged by key, so you can change one parameter without resending the rest. " +
         "Requires the full tag path from gtm_list_tags.",
       inputSchema: gtmUpdateTagSchema as unknown as Record<string, unknown>,
       write: true,
@@ -163,16 +167,47 @@ export function createGtmWriteTools(
 
         try {
           const client = await gtm();
+
+          // Read-then-merge. The raw GTM update endpoint REPLACES, so omitted
+          // fields are cleared — see docs/GMCP-06-phase3.md §6.3. That failure is
+          // silent (a tag with no firing trigger looks normal and never fires),
+          // so this server merges by default and requires an explicit empty array
+          // to clear. Costs one extra GET per update; updates are not loop-shaped.
+          const currentRes = await client.accounts.containers.workspaces.tags.get({
+            path: input.tagPath,
+          });
+          const current = currentRes.data;
+
+          // `undefined` means omitted (preserve). An explicit value — including
+          // an empty array — means the caller intends that value.
+          const pick = <T>(supplied: T | undefined, existing: T | undefined): T | undefined =>
+            supplied !== undefined ? supplied : existing;
+
+          // Parameters merge by key so one can be changed without resending all.
+          const mergedParameter = (() => {
+            if (input.parameter === undefined) return current.parameter ?? undefined;
+            // googleapis types allow null on every field; the local shape does
+            // not. Widen rather than narrow — this map is passed straight back.
+            const byKey = new Map<string, unknown>();
+            for (const p of current.parameter ?? []) if (p.key) byKey.set(p.key, p);
+            for (const p of input.parameter) if (p.key) byKey.set(p.key, p);
+            return [...byKey.values()];
+          })();
+
+          const preserved = (
+            ["parameter", "firingTriggerId", "blockingTriggerId", "paused", "notes"] as const
+          ).filter((k) => input[k] === undefined);
+
           const res = await client.accounts.containers.workspaces.tags.update({
             path: input.tagPath,
             requestBody: {
               name: input.name,
               type: input.type,
-              parameter: input.parameter as never,
-              firingTriggerId: input.firingTriggerId,
-              blockingTriggerId: input.blockingTriggerId,
-              paused: input.paused,
-              notes: input.notes,
+              parameter: mergedParameter as never,
+              firingTriggerId: pick(input.firingTriggerId, current.firingTriggerId ?? undefined),
+              blockingTriggerId: pick(input.blockingTriggerId, current.blockingTriggerId ?? undefined),
+              paused: pick(input.paused, current.paused ?? undefined),
+              notes: pick(input.notes, current.notes ?? undefined),
             },
           });
 
@@ -180,7 +215,13 @@ export function createGtmWriteTools(
             updated: true,
             reversible: true,
             affectsLiveSite: false,
-            note: "Workspace-only change. Not live until published.",
+            merged: true,
+            preservedFields: preserved,
+            note:
+              "Workspace-only change. Not live until published. " +
+              (preserved.length
+                ? `Preserved from the existing tag: ${preserved.join(", ")}. To clear a field instead, pass it explicitly as an empty array.`
+                : "Every field was supplied explicitly."),
             tag: {
               path: res.data.path ?? "",
               tagId: res.data.tagId ?? "",
