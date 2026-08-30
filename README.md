@@ -4,7 +4,7 @@
 
 Read tools are always on. Write tools are off unless you explicitly enable them. Destructive operations are not implemented at all.
 
-> **Status: Phase 1 (early).** One tool ships today (`ga4_run_report`). The full read suite lands next. See [Roadmap](#roadmap).
+> **Status: Early — v0.1.0.** 15 read tools and 9 opt-in write tools are available across GA4, Search Console, and Tag Manager. See [Roadmap](#roadmap).
 
 ---
 
@@ -380,9 +380,9 @@ Expected unless you passed `--enable-write` or set `GMCP_ENABLE_WRITE=1`. Re-aut
 ## Roadmap
 
 - [x] **Phase 1** — auth, server, `ga4_run_report`
-- [ ] **Phase 2** — full read suite across GA4, Search Console, Tag Manager
-- [ ] **Phase 3** — write tools behind the flag, publish confirm gate
-- [ ] **Phase 4** — contract tests, live smoke suite, traceability
+- [x] **Phase 2** — full read suite across GA4, Search Console, Tag Manager
+- [x] **Phase 3** — write tools behind the flag, publish confirm gate
+- [x] **Phase 4** — contract tests, live smoke suite, traceability
 - [ ] **Phase 5** — npm release
 
 ---
