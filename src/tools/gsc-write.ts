@@ -1,9 +1,9 @@
 /**
  * Search Console write tools (searchconsole v1).
  *
- * Registered only when write mode is enabled (handover D4).
+ * Registered only when write mode is enabled (see docs/DESIGN.md §1).
  *
- * NOT implemented, by design (handover D5): sitemap deletion, and site add /
+ * NOT implemented, by design (see docs/DESIGN.md §2): sitemap deletion, and site add /
  * remove. Search Console has no write surface that touches rankings or content,
  * so the blast radius here is the smallest of the three APIs — but deletion is
  * still omitted for consistency with the rest of the server.

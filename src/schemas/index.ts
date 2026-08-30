@@ -2,7 +2,7 @@
  * Schema registry.
  *
  * Every tool input schema is declared here and referenced by registration. This
- * is the contract-discipline requirement from handover D8 — docs and tests read
+ * is the contract-discipline requirement described in docs/DESIGN.md — docs and tests read
  * from the same objects the server registers.
  */
 

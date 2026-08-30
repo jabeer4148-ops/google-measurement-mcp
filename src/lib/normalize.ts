@@ -86,8 +86,7 @@ export interface GtmWorkspacePath {
 /**
  * GTM paths are compound: accounts/{a}/containers/{c}/workspaces/{w}.
  *
- * Accept either the full path string or the individual IDs (handover Phase 2
- * requirement). Callers pass whichever they have; internals always use `path`.
+ * Accept either the full path string or the individual IDs (see docs/DESIGN.md). Callers pass whichever they have; internals always use `path`.
  */
 export function normalizeWorkspacePath(
   input: { path?: string; accountId?: string; containerId?: string; workspaceId?: string },

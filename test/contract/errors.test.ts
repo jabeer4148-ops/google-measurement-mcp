@@ -1,5 +1,5 @@
 /**
- * Error taxonomy contract tests (handover Phase 4.1).
+ * Error taxonomy contract tests (see docs/TESTING.md).
  *
  * Google signals permission denial and quota exhaustion with the SAME 403 and
  * distinguishes them only by reason code. Getting that wrong sends a user
@@ -85,7 +85,7 @@ describe("mapGoogleError — invalid_grant", () => {
   });
 
   /**
-   * GMCP-02 §3: Google returns a bare invalid_grant for four distinct causes.
+   * docs/API-NOTES.md: Google returns a bare invalid_grant for four distinct causes.
    * Naming only the Testing-status one would misdiagnose roughly a quarter of
    * real occurrences — a confidently wrong message is worse than a vague one.
    */

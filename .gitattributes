@@ -1,5 +1,5 @@
 # Normalize line endings on commit; check out LF everywhere.
-# Set before the first external contributor (lesson from crawlcheck, §10 Phase 5).
+# Set before the first external contributor, when it is still cheap.
 * text=auto eol=lf
 
 # Binary — never normalize

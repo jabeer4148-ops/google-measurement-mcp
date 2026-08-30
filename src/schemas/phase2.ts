@@ -1,7 +1,7 @@
 /**
- * JSON Schemas for the Phase 2 read suite.
+ * JSON Schemas for the read tools.
  *
- * Single source of truth (handover D8): registration references these objects and
+ * Single source of truth (see docs/DESIGN.md): registration references these objects and
  * `validateInput` enforces them. Never redeclare a shape at a call site.
  */
 

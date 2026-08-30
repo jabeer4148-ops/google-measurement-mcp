@@ -1,19 +1,18 @@
 /**
  * Tag Manager write tools (tagmanager v2).
  *
- * This file carries the entire blast radius of the project. Handover §8 rates
- * "agent publishes a broken GTM container" as the only High-severity risk,
- * because a bad publish breaks tracking on every page of a live site.
+ * This file carries the entire blast radius of the project: a bad container
+ * publish breaks tracking on every page of a live site, silently.
  *
  * Three structural protections, in order of importance:
  *
  *  1. Everything except publish operates on a WORKSPACE. A workspace is a
  *     staging area; nothing in it affects a live site until published.
- *  2. `gtm_publish_version` requires `confirm: true` (handover D6). Without it
+ *  2. `gtm_publish_version` requires `confirm: true` (see docs/DESIGN.md §3). Without it
  *     the tool performs a dry run — it fetches what would go live, diffs it
  *     against the currently live version, returns that summary, and makes NO
  *     publish call.
- *  3. Deletion is not implemented at all (handover D5). No tag, trigger,
+ *  3. Deletion is not implemented at all (see docs/DESIGN.md §2). No tag, trigger,
  *     variable, version or container can be deleted through this server, and
  *     the corresponding scopes are never requested.
  */
@@ -169,7 +168,7 @@ export function createGtmWriteTools(
           const client = await gtm();
 
           // Read-then-merge. The raw GTM update endpoint REPLACES, so omitted
-          // fields are cleared — see docs/GMCP-06-phase3.md §6.3. That failure is
+          // fields are cleared — see docs/API-NOTES.md. That failure is
           // silent (a tag with no firing trigger looks normal and never fires),
           // so this server merges by default and requires an explicit empty array
           // to clear. Costs one extra GET per update; updates are not loop-shaped.
@@ -410,8 +409,8 @@ export function createGtmWriteTools(
         try {
           const client = await gtm();
 
-          // ---- DRY RUN (handover D6) -------------------------------------
-          // No publish call is made on this path. Phase 4 asserts that with a spy.
+          // ---- DRY RUN (see docs/DESIGN.md §3) -------------------------------------
+          // No publish call is made on this path; a spy test asserts it.
           if (input.confirm !== true) {
             const candidateRes = await client.accounts.containers.versions.get({
               path: versionPath,

@@ -23,15 +23,15 @@ const VERSION_PATH = "accounts/1/containers/2/versions/7";
 
 // ------------------------------------------------- D6 publish confirm gate
 
-describe("gtm_publish_version confirm gate (handover D6)", () => {
+describe("gtm_publish_version confirm gate (see docs/DESIGN.md §3)", () => {
   async function publishTool() {
     const { write } = await buildTools("write");
     return write.find((t) => t.name === "gtm_publish_version")!;
   }
 
   /**
-   * The single most important assertion in the codebase. Handover §8 rates a
-   * bad GTM publish as the only High-severity risk.
+   * The single most important assertion in the codebase. A bad GTM container
+   * publish is the highest-impact failure this server can cause.
    */
   it.each([
     ["omitted", {}],
@@ -140,7 +140,7 @@ describe("gtm_update_tag merges rather than replaces", () => {
   /**
    * The raw GTM API clears omitted fields. A tag with an emptied
    * firingTriggerId looks completely normal in the UI and never fires —
-   * silent, severe, and invisible where a human would look. See GMCP-06 §6.3.
+   * silent, severe, and invisible where a human would look. See docs/API-NOTES.md.
    */
   it("preserves omitted firingTriggerId instead of clearing it", async () => {
     const tool = await updateTool();
@@ -209,7 +209,7 @@ describe("schema and validator stay in contract", () => {
   >;
 
   /**
-   * GMCP-04 §2.1 open item. The hand-rolled validator silently IGNORES keywords
+   * The hand-rolled validator silently IGNORES keywords
    * it does not implement, so a schema using `oneOf` or `pattern` would look
    * enforced and not be. This catches that at test time.
    */

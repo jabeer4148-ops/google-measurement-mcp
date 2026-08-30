@@ -2,9 +2,9 @@
 /**
  * Proves the D6 confirm gate with a spy — no network, no credentials.
  *
- * This is the single most important assertion in the project. Handover §8 rates
- * "agent publishes a broken GTM container" as the only High-severity risk, and
- * the confirm gate is the control that mitigates it.
+ * This is the single most important assertion in the project. A bad GTM container publish is the
+ * highest-impact failure this server can cause, and the confirm gate is the
+ * control that mitigates it.
  *
  * Asserting on the tool DESCRIPTION is not evidence — a description can promise
  * anything. This stubs the Tag Manager client and asserts on call behaviour:

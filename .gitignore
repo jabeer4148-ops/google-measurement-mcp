@@ -27,6 +27,14 @@ token-*.json
 coverage/
 .vitest/
 
+# Local working notes. The published engineering record is docs/DESIGN.md,
+# docs/API-NOTES.md and docs/TESTING.md.
+*-handover.md
+docs/GMCP-*.md
+*.internal.md
+*.local.md
+mcp_analytics_probe.csv
+
 # Editor / OS
 .DS_Store
 Thumbs.db

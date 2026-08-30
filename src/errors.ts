@@ -1,5 +1,5 @@
 /**
- * Error taxonomy (handover D8).
+ * Error taxonomy (see docs/DESIGN.md).
  *
  * Nothing from googleapis reaches an MCP client unmapped. Raw stack traces are
  * never surfaced — every failure becomes one of these typed errors with an
@@ -79,7 +79,7 @@ export class UpstreamError extends GmcpError {
 
 /**
  * The single most likely support issue created by defaulting to OAuth
- * (GMCP-01a §6.2). Google returns a bare `invalid_grant` for several distinct
+ * (see docs/API-NOTES.md). Google returns a bare `invalid_grant` for several distinct
  * causes, so name all of them rather than emitting a generic auth failure.
  *
  * Causes, in rough order of likelihood for this tool:
@@ -163,7 +163,7 @@ function extractMessage(e: GoogleErrorShape, fallback: string): string {
  *
  * Google signals permission denial and quota exhaustion with the *same* 403
  * status and distinguishes them only by reason code, so 403 is routed on reason
- * rather than status (handover Phase 1 requirement 6).
+ * rather than status (see docs/API-NOTES.md).
  *
  * @param err     The caught value. Untyped by necessity.
  * @param context Short description of the attempted operation, e.g. "run GA4 report".

@@ -1,5 +1,5 @@
 /**
- * JSON Schemas for the Phase 3 write suite.
+ * JSON Schemas for the write tools.
  *
  * These tools change live configuration. Every schema here is deliberately
  * strict — `additionalProperties: false` plus enums wherever Google accepts a

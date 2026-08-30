@@ -1,7 +1,7 @@
 /**
  * GA4 Data API tools (analyticsdata v1beta).
  *
- * Phase 1 ships exactly one tool as a proof of connection.
+ * Standard and realtime reporting.
  */
 
 import { google } from "googleapis";
@@ -25,7 +25,7 @@ const DATE_PATTERN = /^(\d{4}-\d{2}-\d{2}|today|yesterday|\d+daysAgo)$/;
  * is expressed separately because it is a format constraint the validator's
  * supported subset does not cover.
  *
- * Phase 4 asserts, with a spy, that malformed input never reaches Google.
+ * Asserted with a spy that malformed input never reaches Google (docs/TESTING.md).
  */
 function validate(raw: unknown): Ga4RunReportInput {
   const input = validateInput<Ga4RunReportInput>(raw, ga4RunReportSchema, "ga4_run_report");
@@ -70,7 +70,7 @@ export function createGa4DataTools(
       title: "Run a GA4 report",
       description:
         "Runs a Google Analytics 4 report and returns rows as flat objects. " +
-        "Requires the NUMERIC GA4 propertyId (e.g. 543399494), not the G-XXXXXXX measurement ID. " +
+        "Requires the NUMERIC GA4 propertyId (e.g. 123456789), not the G-XXXXXXX measurement ID. " +
         "If the user does not know it, it appears in any GA4 URL as the digits after 'p' " +
         "(analytics.google.com/analytics/web/#/a<account>p<property>/...), or under " +
         "GA4 Admin -> Property details -> PROPERTY ID. " +

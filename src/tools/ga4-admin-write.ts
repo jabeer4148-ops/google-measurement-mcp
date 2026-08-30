@@ -1,9 +1,9 @@
 /**
  * GA4 Admin write tools (analyticsadmin v1beta).
  *
- * Registered only when write mode is enabled (handover D4).
+ * Registered only when write mode is enabled (see docs/DESIGN.md §1).
  *
- * NOT implemented, by design (handover D5): archiving custom dimensions,
+ * NOT implemented, by design (see docs/DESIGN.md §2): archiving custom dimensions,
  * deleting key events, and any property or data-stream mutation. An agent
  * cannot call what does not exist.
  */

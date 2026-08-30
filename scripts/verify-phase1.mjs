@@ -254,7 +254,7 @@ if (listMsg?.result?.tools) {
   const names = tools.map((t) => t.name);
 
   // Assert by explicit name list, not a count or snapshot. A snapshot silently
-  // absorbs a tool that should not be there (GMCP-02 §7.3 lesson).
+  // absorbs a tool that should not be there (docs/TESTING.md lesson).
   const missing = EXPECTED_READ_TOOLS.filter((n) => !names.includes(n));
   const unexpected = names.filter((n) => !EXPECTED_READ_TOOLS.includes(n));
   record(
@@ -371,7 +371,7 @@ const EXPECTED_WRITE_TOOLS = [
   "gtm_publish_version",
 ];
 
-// Deliberately never implemented (handover D5). Asserting their ABSENCE is the
+// Deliberately never implemented (see docs/DESIGN.md §2). Asserting their ABSENCE is the
 // point — this list must stay in sync with the README's safety section.
 const FORBIDDEN_TOOLS = [
   "ga4_delete_key_event",
@@ -481,7 +481,7 @@ if (writeScopeLine) {
     missing.length ? `MISSING: ${missing.join(", ")}` : `all ${scopes.length} present`,
   );
 
-  // Destructive scopes must never be requested, even in write mode (handover D5).
+  // Destructive scopes must never be requested, even in write mode (see docs/DESIGN.md §2).
   const forbidden = [
     "tagmanager.delete.containers",
     "tagmanager.manage.users",

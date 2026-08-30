@@ -1,5 +1,5 @@
 /**
- * Credential resolution (handover D2, as amended by docs/GMCP-01a-D2-auth-decision.md).
+ * Credential resolution strategy.
  *
  * Resolution order:
  *   1. GOOGLE_APPLICATION_CREDENTIALS — service-account JSON. Agency / CI path.
@@ -41,7 +41,7 @@ export function missingScopes(granted: string | undefined, required: readonly st
  * GSC     https://developers.google.com/webmaster-tools/v1/searchanalytics/query
  * GTM     https://developers.google.com/tag-platform/tag-manager/api/v2/authorization
  *
- * Deliberately NOT requested, per handover D5 (destructive operations are not
+ * Deliberately NOT requested, by design (destructive operations are not
  * implemented at all): tagmanager.delete.containers, tagmanager.manage.users,
  * tagmanager.manage.accounts, analytics.manage.users, analytics.provision,
  * analytics.user.deletion.
@@ -57,8 +57,9 @@ export const WRITE_SCOPES = [
   "https://www.googleapis.com/auth/analytics.edit",
   "https://www.googleapis.com/auth/webmasters",
   "https://www.googleapis.com/auth/tagmanager.edit.containers",
-  // Required by workspaces.create_version in Phase 3. The handover's §5 scope
-  // table omits this entirely — see docs/GMCP-02-phase1.md.
+  // Required by workspaces.create_version. Commonly missed — see
+  // docs/API-NOTES.md; omitting it yields a 403 that looks like a
+  // user permission problem.
   "https://www.googleapis.com/auth/tagmanager.edit.containerversions",
   "https://www.googleapis.com/auth/tagmanager.publish",
 ] as const;
@@ -261,7 +262,7 @@ function describeNoCredentials(mode: AuthMode): AuthError {
  *
  * `interactive` gates the browser consent flow. It must be false when the server
  * is already serving MCP traffic — a consent prompt mid-session would hang the
- * client. Phase 1 runs it during startup only.
+ * client. The server runs it during startup only.
  */
 export async function getAuthClient(
   mode: AuthMode,
@@ -314,7 +315,7 @@ export async function getAuthClient(
 
         // Cached tokens are minted for whatever scopes were granted at consent
         // time. A read-mode login must not silently power write mode — that
-        // surfaces later as a confusing Google 403 (GMCP-02 §7.4).
+        // surfaces later as a confusing Google 403 (see docs/API-NOTES.md).
         const shortfall = missingScopes(stored.scope, scopes);
         if (shortfall.length > 0) {
           const missing = shortfall.map(shortScope).join(", ");

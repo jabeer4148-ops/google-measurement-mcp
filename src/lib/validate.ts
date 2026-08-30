@@ -1,13 +1,13 @@
 /**
  * Schema-driven input validation.
  *
- * Phase 1 hand-wrote validation inside the one tool that existed. That does not
- * scale to fifteen, and hand-rolled checks drift from the declared schema — which
- * would break the contract discipline in handover D8, where the schema is meant to
+ * An earlier version hand-wrote validation inside each tool. That does not scale
+ * to two dozen, and hand-rolled checks drift from the declared schema — which
+ * would break the contract discipline in docs/DESIGN.md, where the schema is meant to
  * be the single source of truth.
  *
- * This is a deliberately small validator rather than ajv, because the Phase 1 spec
- * pins runtime dependencies to `@modelcontextprotocol/sdk` and `googleapis`. It
+ * This is a deliberately small validator rather than ajv, to keep runtime
+ * dependencies to `@modelcontextprotocol/sdk` and `googleapis` only. It
  * covers exactly the JSON Schema subset these tools use. Anything outside that
  * subset is ignored rather than silently mis-validated — see SUPPORTED below.
  *
@@ -66,8 +66,8 @@ function matchesType(value: unknown, expected: string): boolean {
  * Validate `raw` against `schema`, throwing ValidationError on the first problem.
  *
  * Errors name the offending parameter and, where a fix is obvious, say what to do.
- * Every failure here happens *before* any network call — Phase 4 asserts that with
- * a spy on the API client.
+ * Every failure here happens *before* any network call, asserted with a spy on the
+ * API client (see docs/TESTING.md).
  *
  * @param raw       Untrusted tool arguments.
  * @param schema    The tool's declared JSON Schema.

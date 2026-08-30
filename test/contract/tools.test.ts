@@ -1,5 +1,5 @@
 /**
- * Per-tool contract tests (handover Phase 4.1 and 4.2).
+ * Per-tool contract tests (see docs/TESTING.md).
  *
  * The central assertion: malformed input is rejected LOCALLY, before any API
  * call. Proven with a spy on the stubbed client rather than by inspecting the
@@ -48,7 +48,7 @@ const EXPECTED_WRITE = [
   "gtm_publish_version",
 ];
 
-/** Never implemented (handover D5). Asserting absence is the point. */
+/** Never implemented (see docs/DESIGN.md §2). Asserting absence is the point. */
 const FORBIDDEN = [
   "ga4_delete_key_event",
   "ga4_archive_custom_dimension",
@@ -69,7 +69,7 @@ beforeEach(() => {
 
 // ------------------------------------------------------------------ gating
 
-describe("write gating (handover D4)", () => {
+describe("write gating (see docs/DESIGN.md §1)", () => {
   it("registers zero write tools when the flag is off", async () => {
     const { read, write } = await buildTools("read");
     expect(write).toHaveLength(0);
@@ -79,7 +79,7 @@ describe("write gating (handover D4)", () => {
   /**
    * Asserted against an explicit name list rather than a snapshot or a count.
    * A snapshot silently absorbs a tool added later — the exact failure mode
-   * recorded in GMCP-02 §7.3.
+   * recorded in docs/TESTING.md.
    */
   it("exposes exactly the expected write tools when the flag is on", async () => {
     const { write } = await buildTools("write");
@@ -152,7 +152,7 @@ describe("output shapes", () => {
     const { all } = await buildTools("read");
     const tool = all.find((t) => t.name === "ga4_run_report")!;
     const out = (await tool.handler({
-      propertyId: "543399494",
+      propertyId: "123456789",
       startDate: "28daysAgo",
       endDate: "today",
       dimensions: ["date"],
@@ -181,19 +181,19 @@ describe("output shapes", () => {
     const { all } = await buildTools("read");
     const tool = all.find((t) => t.name === "ga4_run_report")!;
     await tool.handler({
-      propertyId: "543399494",
+      propertyId: "123456789",
       startDate: "28daysAgo",
       endDate: "today",
       metrics: ["activeUsers"],
     });
     const call = callsTo("runReport")[0]!;
-    expect((call.args as { property: string }).property).toBe("properties/543399494");
+    expect((call.args as { property: string }).property).toBe("properties/123456789");
   });
 });
 
 // ------------------------------------------------------------- truncation
 
-describe("truncation (handover D7)", () => {
+describe("truncation (see docs/DESIGN.md §6)", () => {
   it("returns exactly `limit` rows with truncated:true and a correct totalRows", () => {
     const rows = Array.from({ length: 40 }, (_, i) => ({ i }));
     const out = truncateRows(rows, 25, 40);
@@ -211,7 +211,7 @@ describe("truncation (handover D7)", () => {
   /**
    * Callers over-fetch by one to detect truncation. If the API reported no
    * total, saying "25 of 26" would imply near-completeness when the real total
-   * might be 40,000 — GMCP-02 §5.3.
+   * might be 40,000 — docs/DESIGN.md §6.
    */
   it("does not invent a total when the API did not report one", () => {
     const rows = Array.from({ length: 26 }, (_, i) => ({ i }));

@@ -4,7 +4,7 @@
  *
  * Local stdio MCP server exposing GA4, Search Console, and Tag Manager.
  * Read tools are always registered; write tools appear only when write mode is
- * explicitly enabled (handover D4).
+ * explicitly enabled (see docs/DESIGN.md §1).
  *
  * stdout is the MCP transport. All human-facing output goes to stderr.
  */
@@ -118,8 +118,8 @@ async function main(): Promise<void> {
     );
   }
 
-  // Registry. The write-gate branch is in place now so Phase 3 slots in without
-  // restructuring, even though no write tools exist yet.
+  // Registry. Write tools are constructed only when the flag is on, so a
+  // refactor cannot leak them into read mode.
   const readTools: ToolDefinition[] = [
     ...createGa4DataTools(getClient, config),
     ...createGa4AdminTools(getClient, config),

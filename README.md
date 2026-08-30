@@ -139,7 +139,7 @@ Same shape as Cursor. macOS: `~/Library/Application Support/Claude/claude_deskto
 <details>
 <summary><strong>claude.ai custom connectors</strong></summary>
 
-Not currently supported. claude.ai connectors require a **remote** MCP server over HTTP; this is a local stdio server by design (handover D3), which keeps your Google credentials on your own machine rather than on someone else's.
+Not currently supported. claude.ai connectors require a **remote** MCP server over HTTP; this is a local stdio server by design, which keeps your Google credentials on your own machine rather than on someone else's.
 
 </details>
 
@@ -284,7 +284,7 @@ Responses are capped at 25 rows by default. When output is clipped you get `trun
 | `ga4_update_key_event` | Changes counting method | Yes |
 | `gsc_submit_sitemap` | Submits a sitemap URL | Yes, from the Search Console UI |
 | `gtm_create_tag` | Creates a tag in a workspace | Yes — not live until published |
-| `gtm_update_tag` | Replaces a tag's config | Yes — not live until published |
+| `gtm_update_tag` | Updates a tag, **merging** over its current config | Yes — not live until published |
 | `gtm_create_trigger` | Creates a trigger in a workspace | Yes — not live until published |
 | `gtm_create_version` | Snapshots a workspace into a version | Safe — creating ≠ publishing |
 | `gtm_publish_version` | **Publishes to the live site** | Yes, via GTM version history |
@@ -382,7 +382,7 @@ Expected unless you passed `--enable-write` or set `GMCP_ENABLE_WRITE=1`. Re-aut
 - [x] **Phase 1** — auth, server, `ga4_run_report`
 - [x] **Phase 2** — full read suite across GA4, Search Console, Tag Manager
 - [x] **Phase 3** — write tools behind the flag, publish confirm gate
-- [x] **Phase 4** — contract tests, live smoke suite, traceability
+- [x] **Phase 4** — contract tests, traceability matrix, CI
 - [ ] **Phase 5** — npm release
 
 ---
@@ -398,7 +398,11 @@ node scripts/verify-confirm-gate.mjs  # 17 assertions on the publish gate
 
 Contract tests stub the Google clients and assert on call behaviour, so they run anywhere including CI. The safety-critical ones live in `test/contract/safety.test.ts` — a failure there is a release blocker.
 
-`docs/GMCP-05-traceability.md` maps every tool to its API method, scope, reversibility, quota and covering tests, and lists the known gaps.
+Three documents cover the engineering detail:
+
+- [`docs/DESIGN.md`](docs/DESIGN.md) — why the safety architecture is shaped the way it is
+- [`docs/API-NOTES.md`](docs/API-NOTES.md) — Google API behaviours that are undocumented, easy to miss, or actively misleading
+- [`docs/TESTING.md`](docs/TESTING.md) — traceability matrix mapping every tool to its API method, scope, reversibility, quota and covering tests, plus the known gaps
 
 ## Requirements
 

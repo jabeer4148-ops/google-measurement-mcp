@@ -1,7 +1,7 @@
 /**
  * Environment and CLI flag parsing.
  *
- * Write mode is opt-in and must be explicit (handover D4). When it is off, write
+ * Write mode is opt-in and must be explicit (see docs/DESIGN.md §1). When it is off, write
  * tools are never registered — they are absent from tools/list, not present-and-erroring.
  */
 
@@ -15,7 +15,7 @@ export interface Config {
   writeEnabled: boolean;
   /** Auth scope mode derived from writeEnabled. */
   mode: AuthMode;
-  /** Default row cap applied by every list/report tool (handover D7). */
+  /** Default row cap applied by every list/report tool (see docs/DESIGN.md §6). */
   defaultRowLimit: number;
   /** Hard ceiling a caller may request via an explicit `limit`. */
   maxRowLimit: number;
