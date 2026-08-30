@@ -350,7 +350,7 @@ node scripts/verify-confirm-gate.mjs
 Your OAuth app name contains "Google", which Google's branding policy prohibits. Rename it to `Measurement MCP`. This is a consent-screen display label only and is unrelated to the package name.
 
 **"Your saved Google login is no longer valid"**
-Most likely your consent screen is still in **Testing** (7-day token expiry) — see [step 4](#4-️-set-your-consent-screen-to-in-production). Other causes: more than 25 saved logins for one OAuth client, a clock out of sync, or access revoked from your Google account page.
+Most likely your consent screen is still in **Testing** (7-day token expiry) — see [step 3](#3-️-publish-the-app--do-not-skip-this). Other causes: more than 25 saved logins for one OAuth client, a clock out of sync, or access revoked from your Google account page.
 
 **`redirect_uri_mismatch`**
 Your OAuth client is a "Web application" type. Create a **Desktop app** client instead.
