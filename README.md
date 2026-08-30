@@ -383,7 +383,7 @@ Expected unless you passed `--enable-write` or set `GMCP_ENABLE_WRITE=1`. Re-aut
 - [x] **Phase 2** — full read suite across GA4, Search Console, Tag Manager
 - [x] **Phase 3** — write tools behind the flag, publish confirm gate
 - [x] **Phase 4** — contract tests, traceability matrix, CI
-- [ ] **Phase 5** — npm release
+- [x] **Phase 5** — npm release
 
 ---
 
