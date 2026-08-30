@@ -4,6 +4,7 @@ node_modules/
 # Build output
 dist/
 *.tsbuildinfo
+*.tgz
 
 # Credentials — NOTHING resembling a Google service account key or OAuth client
 # secret may ever be committed. Keep keys/tokens outside the repo

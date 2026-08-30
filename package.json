@@ -21,6 +21,14 @@
     "cursor"
   ],
   "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jabeer4148-ops/google-measurement-mcp.git"
+  },
+  "homepage": "https://github.com/jabeer4148-ops/google-measurement-mcp#readme",
+  "bugs": {
+    "url": "https://github.com/jabeer4148-ops/google-measurement-mcp/issues"
+  },
   "type": "module",
   "engines": {
     "node": ">=20"

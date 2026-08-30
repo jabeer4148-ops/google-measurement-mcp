@@ -18,7 +18,26 @@ Most GTM MCP servers can publish containers. This one makes that hard on purpose
 - **Destructive operations do not exist in the codebase.** No delete, no archive, no removal of tags, triggers, variables, sitemaps, or key events. This is a deliberate design choice, not a gap.
 - **Publishing requires human confirmation.** `gtm_publish_version` without `confirm: true` returns a diff of what *would* go live and refuses to publish.
 
-If you want a read-only GA4 server and nothing else, **use [Google's official one](https://github.com/googleanalytics/google-analytics-mcp)** — it's excellent, it's maintained by Google, and it's the better choice for that job. This server exists for people who need Search Console and Tag Manager in the same place, and who want write access without handing an agent a loaded gun.
+## Should you use this or Google's official server?
+
+**If you only need GA4, and only reads — use [Google's](https://github.com/googleanalytics/google-analytics-mcp).** It's maintained by Google, it has a far larger community, and it has GA4 features this server does not.
+
+| | google-measurement-mcp | [Google's analytics-mcp](https://github.com/googleanalytics/google-analytics-mcp) |
+|---|---|---|
+| **APIs** | GA4 + Search Console + Tag Manager | GA4 only |
+| **Writes** | Yes, behind an explicit flag | No — read-only |
+| **Funnel reports** | ❌ not implemented | ✅ `run_funnel_report` |
+| **Google Ads links** | ❌ not implemented | ✅ `list_google_ads_links` |
+| **Property details** | Partial (via account summaries) | ✅ `get_property_details` |
+| **Runtime** | Node ≥ 20, npm | Python 3.10+, PyPI |
+| **Auth** | OAuth, service account, or ADC | ADC |
+| **Maintainer** | Community (one person) | Google |
+| **Status** | Early — v0.1.0 | Experimental |
+| **License** | Apache-2.0 | Apache-2.0 |
+
+**Where Google's is genuinely better:** GA4-only workflows, funnel analysis, Google Ads attribution, and the simple fact that it's maintained by the team that owns the API. If your question is "what happened in my GA4 property," reach for theirs first.
+
+**Where this one earns its place:** you need Search Console and Tag Manager alongside GA4 without running three servers, or you need write access and want the dangerous operations to be hard to reach by accident. Running both side by side is entirely reasonable — they don't conflict.
 
 ---
 
@@ -58,6 +77,24 @@ Note the client ID and secret. **Desktop app** matters — a "Web application" c
 
 ### 5. Configure your MCP client
 
+<details open>
+<summary><strong>Claude Code</strong></summary>
+
+```bash
+claude mcp add google-measurement \
+  --scope user \
+  -e GMCP_OAUTH_CLIENT_ID=your-client-id.apps.googleusercontent.com \
+  -e GMCP_OAUTH_CLIENT_SECRET=your-client-secret \
+  -- npx -y google-measurement-mcp
+```
+
+Add `--enable-write` after the package name to expose write tools.
+
+</details>
+
+<details>
+<summary><strong>Cursor</strong> — <code>~/.cursor/mcp.json</code></summary>
+
 ```json
 {
   "mcpServers": {
@@ -72,6 +109,39 @@ Note the client ID and secret. **Desktop app** matters — a "Web application" c
   }
 }
 ```
+
+Reload MCP servers after editing, or the old tool list stays cached.
+
+</details>
+
+<details>
+<summary><strong>Claude Desktop</strong> — <code>claude_desktop_config.json</code></summary>
+
+Same shape as Cursor. macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`. Windows: `%APPDATA%\Claude\claude_desktop_config.json`.
+
+```json
+{
+  "mcpServers": {
+    "google-measurement": {
+      "command": "npx",
+      "args": ["-y", "google-measurement-mcp"],
+      "env": {
+        "GMCP_OAUTH_CLIENT_ID": "your-client-id.apps.googleusercontent.com",
+        "GMCP_OAUTH_CLIENT_SECRET": "your-client-secret"
+      }
+    }
+  }
+}
+```
+
+</details>
+
+<details>
+<summary><strong>claude.ai custom connectors</strong></summary>
+
+Not currently supported. claude.ai connectors require a **remote** MCP server over HTTP; this is a local stdio server by design (handover D3), which keeps your Google credentials on your own machine rather than on someone else's.
+
+</details>
 
 ### 6. Sign in once
 
