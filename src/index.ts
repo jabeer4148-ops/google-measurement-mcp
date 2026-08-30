@@ -31,6 +31,19 @@ import type { ToolDefinition } from "./schemas/index.js";
 const PKG_NAME = "google-measurement-mcp";
 const PKG_VERSION = "0.1.0";
 
+function printUsage(): void {
+  process.stdout.write(
+    `${PKG_NAME} v${PKG_VERSION}\n\n` +
+      "Local stdio MCP server for Google Analytics 4, Search Console, and Tag Manager.\n\n" +
+      "Usage:\n" +
+      `  ${PKG_NAME} [--enable-write]\n\n` +
+      "Options:\n" +
+      "  --enable-write  Register the opt-in write tools and request write scopes.\n" +
+      "  -h, --help      Show this help.\n" +
+      "  -v, --version   Show the installed version.\n",
+  );
+}
+
 /**
  * Silence gcp-metadata's GCE-residency probe warning.
  *
@@ -63,6 +76,16 @@ function suppressMetadataLookupWarning(): void {
 }
 
 async function main(): Promise<void> {
+  const argv = process.argv.slice(2);
+  if (argv.includes("--help") || argv.includes("-h")) {
+    printUsage();
+    return;
+  }
+  if (argv.includes("--version") || argv.includes("-v")) {
+    process.stdout.write(`${PKG_VERSION}\n`);
+    return;
+  }
+
   suppressMetadataLookupWarning();
   const config = loadConfig();
 
