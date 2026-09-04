@@ -27,6 +27,9 @@ token-*.json
 coverage/
 .vitest/
 
+# Local output artifacts (exports, generated PDFs, scratch)
+output/
+
 # Local working notes. The published engineering record is docs/DESIGN.md,
 # docs/API-NOTES.md and docs/TESTING.md.
 *-handover.md
