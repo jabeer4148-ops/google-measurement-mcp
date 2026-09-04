@@ -24,7 +24,7 @@ import {
   gscSearchAnalyticsSchema,
   gscSiteOnlySchema,
 } from "../schemas/phase2.js";
-import type { ToolDefinition } from "../schemas/index.js";
+import { readAnnotations, type ToolDefinition } from "../schemas/index.js";
 
 interface SearchAnalyticsInput {
   siteUrl: string;
@@ -55,6 +55,7 @@ export function createGscTools(
         "('https://example.com/' for URL-prefix properties, 'sc-domain:example.com' for Domain properties). Read-only.",
       inputSchema: gscListSitesSchema as unknown as Record<string, unknown>,
       write: false,
+      annotations: readAnnotations("List Search Console properties"),
       handler: async (raw: unknown) => {
         const input = validateInput<{ limit?: number }>(raw, gscListSitesSchema, "gsc_list_sites");
         const max = resolveLimit(input.limit, config.defaultRowLimit, config.maxRowLimit);
@@ -86,6 +87,7 @@ export function createGscTools(
         "everything — raise `limit` deliberately or narrow with filters. Page with `startRow`. Read-only.",
       inputSchema: gscSearchAnalyticsSchema as unknown as Record<string, unknown>,
       write: false,
+      annotations: readAnnotations("Query Search Console performance data"),
       handler: async (raw: unknown) => {
         const input = validateInput<SearchAnalyticsInput>(
           raw,
@@ -154,6 +156,7 @@ export function createGscTools(
         "and per-type indexed counts. Useful for diagnosing indexing problems. Read-only.",
       inputSchema: gscSiteOnlySchema as unknown as Record<string, unknown>,
       write: false,
+      annotations: readAnnotations("List submitted sitemaps"),
       handler: async (raw: unknown) => {
         const input = validateInput<{ siteUrl: string; limit?: number }>(
           raw,
@@ -199,6 +202,7 @@ export function createGscTools(
         "gsc_search_analytics_query for anything aggregate. Read-only.",
       inputSchema: gscInspectUrlSchema as unknown as Record<string, unknown>,
       write: false,
+      annotations: readAnnotations("Inspect a URL's index status"),
       handler: async (raw: unknown) => {
         const input = validateInput<{
           siteUrl: string;

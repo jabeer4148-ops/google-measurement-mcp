@@ -1,9 +1,9 @@
 /**
  * Search Console write tools (searchconsole v1).
  *
- * Registered only when write mode is enabled (see docs/DESIGN.md §1).
+ * Registered only when write mode is enabled (see docs/DESIGN.md).
  *
- * NOT implemented, by design (see docs/DESIGN.md §2): sitemap deletion, and site add /
+ * NOT implemented, by design (see docs/DESIGN.md): sitemap deletion, and site add /
  * remove. Search Console has no write surface that touches rankings or content,
  * so the blast radius here is the smallest of the three APIs — but deletion is
  * still omitted for consistency with the rest of the server.
@@ -16,7 +16,7 @@ import { ValidationError, mapGoogleError } from "../errors.js";
 import { normalizeSiteUrl } from "../lib/normalize.js";
 import { validateInput } from "../lib/validate.js";
 import { gscSubmitSitemapSchema } from "../schemas/phase3.js";
-import type { ToolDefinition } from "../schemas/index.js";
+import { writeAnnotations, type ToolDefinition } from "../schemas/index.js";
 
 export function createGscWriteTools(
   getClient: () => Promise<OAuth2Client>,
@@ -34,6 +34,7 @@ export function createGscWriteTools(
         "Re-submitting an already-submitted sitemap is harmless and simply refreshes it.",
       inputSchema: gscSubmitSitemapSchema as unknown as Record<string, unknown>,
       write: true,
+      annotations: writeAnnotations("Submit a sitemap to Search Console", false, true),
       handler: async (raw: unknown) => {
         const input = validateInput<{ siteUrl: string; feedpath: string }>(
           raw,

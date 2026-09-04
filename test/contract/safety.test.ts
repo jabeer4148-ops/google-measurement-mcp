@@ -23,7 +23,7 @@ const VERSION_PATH = "accounts/1/containers/2/versions/7";
 
 // ------------------------------------------------- D6 publish confirm gate
 
-describe("gtm_publish_version confirm gate (see docs/DESIGN.md §3)", () => {
+describe("gtm_publish_version confirm gate (see docs/DESIGN.md)", () => {
   async function publishTool() {
     const { write } = await buildTools("write");
     return write.find((t) => t.name === "gtm_publish_version")!;
@@ -258,6 +258,77 @@ describe("schema and validator stay in contract", () => {
     for (const tool of all) {
       expect(tool.inputSchema, tool.name).toBeTruthy();
       expect((tool.inputSchema as { type?: string }).type, tool.name).toBe("object");
+    }
+  });
+
+  /**
+   * MCP annotation completeness.
+   *
+   * A missing or non-boolean hint is treated as a defect by directory
+   * validators, and tells a calling client nothing. All four are set
+   * explicitly on every tool rather than relying on spec defaults.
+   */
+  it("every tool sets all four MCP hints as actual booleans", async () => {
+    const { all } = await buildTools("write");
+    const hints = [
+      "readOnlyHint",
+      "destructiveHint",
+      "idempotentHint",
+      "openWorldHint",
+    ] as const;
+
+    for (const tool of all) {
+      expect(tool.annotations, `${tool.name} has no annotations`).toBeTruthy();
+      expect(typeof tool.annotations.title, `${tool.name} title`).toBe("string");
+      expect(tool.annotations.title.length, `${tool.name} title is empty`).toBeGreaterThan(0);
+      for (const hint of hints) {
+        expect(
+          typeof tool.annotations[hint],
+          `${tool.name}.${hint} must be boolean, got ${typeof tool.annotations[hint]}`,
+        ).toBe("boolean");
+      }
+    }
+  });
+
+  it("annotations agree with the write flag", async () => {
+    const { read, write } = await buildTools("write");
+
+    for (const tool of read) {
+      expect(tool.annotations.readOnlyHint, `${tool.name} is a read tool`).toBe(true);
+      // A read tool cannot destroy anything and is inherently repeatable.
+      expect(tool.annotations.destructiveHint, `${tool.name}`).toBe(false);
+      expect(tool.annotations.idempotentHint, `${tool.name}`).toBe(true);
+    }
+
+    for (const tool of write) {
+      expect(tool.annotations.readOnlyHint, `${tool.name} is a write tool`).toBe(false);
+    }
+  });
+
+  it("every tool declares openWorldHint true — all of them call a Google API", async () => {
+    const { all } = await buildTools("write");
+    for (const tool of all) {
+      expect(tool.annotations.openWorldHint, tool.name).toBe(true);
+    }
+  });
+
+  /**
+   * The publish tool replaces what is live and is the highest-impact call in
+   * the server. If this ever reads non-destructive, a client would stop
+   * prompting for it.
+   */
+  it("gtm_publish_version is annotated destructive", async () => {
+    const { write } = await buildTools("write");
+    const publish = write.find((t) => t.name === "gtm_publish_version")!;
+    expect(publish.annotations.destructiveHint).toBe(true);
+  });
+
+  it("create-style tools are annotated non-idempotent", async () => {
+    const { write } = await buildTools("write");
+    for (const name of ["gtm_create_tag", "gtm_create_trigger", "gtm_create_version"]) {
+      const tool = write.find((t) => t.name === name)!;
+      // Calling create twice yields two objects, not one.
+      expect(tool.annotations.idempotentHint, name).toBe(false);
     }
   });
 

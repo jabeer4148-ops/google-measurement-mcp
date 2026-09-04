@@ -54,7 +54,7 @@ suite("live smoke — credential resolution", () => {
     const { source } = await readTools();
     // Printed rather than asserted: which path resolves is environment-dependent,
     // and knowing WHICH one ran is the point when closing the auth-path gaps in
-    // docs/TESTING.md §6.
+    // docs/TESTING.md.
     console.log(`  credential source: ${source}`);
     expect(source).toBeTruthy();
   });

@@ -86,7 +86,46 @@ Safe by default, dangerous only on purpose. Where the two conflict, the safe rea
 
 ---
 
-## 6. Supporting decisions
+## 6. MCP tool annotations
+
+Every tool declares all four MCP hints explicitly, as actual booleans, on both the read and write surface:
+
+| Tool group | `readOnlyHint` | `destructiveHint` | `idempotentHint` | `openWorldHint` |
+|---|---|---|---|---|
+| All 15 read tools | `true` | `false` | `true` | `true` |
+| `ga4_create_custom_dimension` | `false` | **`true`** | `false` | `true` |
+| `ga4_create_key_event` | `false` | `false` | `false` | `true` |
+| `ga4_update_key_event` | `false` | `true` | `true` | `true` |
+| `gsc_submit_sitemap` | `false` | `false` | `true` | `true` |
+| `gtm_create_tag` | `false` | `false` | `false` | `true` |
+| `gtm_update_tag` | `false` | `true` | `true` | `true` |
+| `gtm_create_trigger` | `false` | `false` | `false` | `true` |
+| `gtm_create_version` | `false` | `false` | `false` | `true` |
+| `gtm_publish_version` | `false` | `true` | `true` | `true` |
+
+`openWorldHint` is `true` everywhere because every tool calls a Google API.
+
+**Nothing is left to a spec default.** A missing or non-boolean hint tells a client nothing and is treated as a defect by directory validators. A contract test fails the build if any tool omits one or supplies a non-boolean.
+
+### 6.1 One deliberate departure from a literal reading
+
+**`ga4_create_custom_dimension` is annotated `destructiveHint: true` even though it only adds.**
+
+Read strictly, creating is an additive operation and the hint should be `false`. But the purpose of `destructiveHint` is to tell a client whether to be careful, and this is the one call in the server that **cannot be undone**: GA4 custom dimensions can only be archived, never deleted, and an archived dimension still consumes one of a property's limited slots.
+
+Annotating it `false` would tell a client "additive, safe to proceed," which materially understates it. Being conservative here costs an unnecessary confirmation prompt; being literal costs a permanent, unrecoverable slot. The trade is one-sided.
+
+Every other create tool is `destructiveHint: false`, since those genuinely are reversible additions.
+
+### 6.2 Annotations are hints, not controls
+
+The MCP specification is explicit that annotations are **untrusted** and must not be relied upon for security. A malicious or buggy server can claim anything.
+
+They are not the safety mechanism here. The real controls are structural and independently verified: write tools that are never registered, destructive tools that do not exist, OAuth scopes that are never requested, and a publish path that makes no API call without `confirm: true`. The annotations only *describe* those properties so a client can render sensible UX.
+
+---
+
+## 7. Supporting decisions
 
 **Row caps.** Every list and report tool caps at 25 rows by default. GA4 and Search Console will happily return tens of thousands and destroy an agent's context window. When output is clipped the response carries `truncated: true` and guidance to narrow the query rather than raise the limit. When the upstream API reports no total, the response says the total is unknown rather than implying the over-fetch count is the real total.
 

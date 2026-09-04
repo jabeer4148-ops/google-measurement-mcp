@@ -24,7 +24,7 @@ Replacement applies *inside* `parameter` too — resending `parameter` with one 
 
 Verified directly: `firingTriggerId: ["4"]` → `[]`, and `supportDocumentWrite: "false"` → absent, after an update that omitted both.
 
-If you are calling this API directly, read the current tag and resend every field you want to keep. This server does that automatically — see [DESIGN.md §4](./DESIGN.md).
+If you are calling this API directly, read the current tag and resend every field you want to keep. This server does that automatically — see [DESIGN.md](./DESIGN.md).
 
 ### Type-required parameters cannot be omitted
 

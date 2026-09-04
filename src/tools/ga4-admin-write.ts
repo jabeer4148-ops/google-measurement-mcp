@@ -1,9 +1,9 @@
 /**
  * GA4 Admin write tools (analyticsadmin v1beta).
  *
- * Registered only when write mode is enabled (see docs/DESIGN.md §1).
+ * Registered only when write mode is enabled (see docs/DESIGN.md).
  *
- * NOT implemented, by design (see docs/DESIGN.md §2): archiving custom dimensions,
+ * NOT implemented, by design (see docs/DESIGN.md): archiving custom dimensions,
  * deleting key events, and any property or data-stream mutation. An agent
  * cannot call what does not exist.
  */
@@ -19,7 +19,7 @@ import {
   ga4CreateKeyEventSchema,
   ga4UpdateKeyEventSchema,
 } from "../schemas/phase3.js";
-import type { ToolDefinition } from "../schemas/index.js";
+import { writeAnnotations, type ToolDefinition } from "../schemas/index.js";
 
 export function createGa4AdminWriteTools(
   getClient: () => Promise<OAuth2Client>,
@@ -43,6 +43,7 @@ export function createGa4AdminWriteTools(
         "and data only appears going forward, never retroactively.",
       inputSchema: ga4CreateCustomDimensionSchema as unknown as Record<string, unknown>,
       write: true,
+      annotations: writeAnnotations("Create a GA4 custom dimension", true, false),
       handler: async (raw: unknown) => {
         const input = validateInput<{
           propertyId: string;
@@ -115,6 +116,7 @@ export function createGa4AdminWriteTools(
         "with the user before calling.",
       inputSchema: ga4CreateKeyEventSchema as unknown as Record<string, unknown>,
       write: true,
+      annotations: writeAnnotations("Create a GA4 key event", false, false),
       handler: async (raw: unknown) => {
         const input = validateInput<{
           propertyId: string;
@@ -161,6 +163,7 @@ export function createGa4AdminWriteTools(
         "Requires the full resource name from ga4_list_key_events, not just the event name.",
       inputSchema: ga4UpdateKeyEventSchema as unknown as Record<string, unknown>,
       write: true,
+      annotations: writeAnnotations("Update a GA4 key event", true, true),
       handler: async (raw: unknown) => {
         const input = validateInput<{
           name: string;

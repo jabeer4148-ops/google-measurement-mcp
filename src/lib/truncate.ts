@@ -1,5 +1,5 @@
 /**
- * Row capping (see docs/DESIGN.md §6).
+ * Row capping (see docs/DESIGN.md).
  *
  * GA4 and Search Console responses will happily return tens of thousands of rows
  * and destroy an agent's context window. Every list/report tool passes through here.

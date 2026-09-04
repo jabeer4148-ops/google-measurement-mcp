@@ -4,7 +4,7 @@
  *
  * Local stdio MCP server exposing GA4, Search Console, and Tag Manager.
  * Read tools are always registered; write tools appear only when write mode is
- * explicitly enabled (see docs/DESIGN.md §1).
+ * explicitly enabled (see docs/DESIGN.md).
  *
  * stdout is the MCP transport. All human-facing output goes to stderr.
  */
@@ -197,8 +197,19 @@ async function main(): Promise<void> {
   server.setRequestHandler(ListToolsRequestSchema, async () => ({
     tools: tools.map((t) => ({
       name: t.name,
+      title: t.annotations.title,
       description: t.description,
       inputSchema: t.inputSchema,
+      // All four hints are always emitted as booleans. Clients and directory
+      // validators treat a missing or non-boolean value as a defect, and a
+      // default tells the caller nothing. See docs/DESIGN.md.
+      annotations: {
+        title: t.annotations.title,
+        readOnlyHint: t.annotations.readOnlyHint,
+        destructiveHint: t.annotations.destructiveHint,
+        idempotentHint: t.annotations.idempotentHint,
+        openWorldHint: t.annotations.openWorldHint,
+      },
     })),
   }));
 

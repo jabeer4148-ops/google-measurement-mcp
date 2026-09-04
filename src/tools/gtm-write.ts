@@ -8,11 +8,11 @@
  *
  *  1. Everything except publish operates on a WORKSPACE. A workspace is a
  *     staging area; nothing in it affects a live site until published.
- *  2. `gtm_publish_version` requires `confirm: true` (see docs/DESIGN.md §3). Without it
+ *  2. `gtm_publish_version` requires `confirm: true` (see docs/DESIGN.md). Without it
  *     the tool performs a dry run — it fetches what would go live, diffs it
  *     against the currently live version, returns that summary, and makes NO
  *     publish call.
- *  3. Deletion is not implemented at all (see docs/DESIGN.md §2). No tag, trigger,
+ *  3. Deletion is not implemented at all (see docs/DESIGN.md). No tag, trigger,
  *     variable, version or container can be deleted through this server, and
  *     the corresponding scopes are never requested.
  */
@@ -30,7 +30,7 @@ import {
   gtmPublishVersionSchema,
   gtmUpdateTagSchema,
 } from "../schemas/phase3.js";
-import type { ToolDefinition } from "../schemas/index.js";
+import { writeAnnotations, type ToolDefinition } from "../schemas/index.js";
 
 interface GtmParameter {
   type?: string;
@@ -77,6 +77,7 @@ export function createGtmWriteTools(
         "call gtm_list_tags on an existing container to see the codes GTM uses.",
       inputSchema: gtmCreateTagSchema as unknown as Record<string, unknown>,
       write: true,
+      annotations: writeAnnotations("Create a tag in a workspace", false, false),
       handler: async (raw: unknown) => {
         const input = validateInput<{
           path?: string;
@@ -132,8 +133,6 @@ export function createGtmWriteTools(
       name: "gtm_update_tag",
       title: "Update a tag in a workspace",
       description:
-        "CHANGES A WORKSPACE. Replaces the configuration of an existing tag. " +
-        "REVERSIBLE: affects only the workspace until published, and GTM keeps version history. " +
         "CHANGES A WORKSPACE. Updates a tag, MERGING your changes over its current configuration. " +
         "REVERSIBLE: workspace-only until published, and GTM keeps version history. " +
         "Fields you omit are PRESERVED — this server fetches the current tag and merges, because the raw GTM API " +
@@ -145,6 +144,7 @@ export function createGtmWriteTools(
         "Requires the full tag path from gtm_list_tags.",
       inputSchema: gtmUpdateTagSchema as unknown as Record<string, unknown>,
       write: true,
+      annotations: writeAnnotations("Update a tag in a workspace", true, true),
       handler: async (raw: unknown) => {
         const input = validateInput<{
           tagPath: string;
@@ -244,6 +244,7 @@ export function createGtmWriteTools(
         "A trigger on its own fires nothing — it must be referenced by a tag's firingTriggerId.",
       inputSchema: gtmCreateTriggerSchema as unknown as Record<string, unknown>,
       write: true,
+      annotations: writeAnnotations("Create a trigger in a workspace", false, false),
       handler: async (raw: unknown) => {
         const input = validateInput<{
           path?: string;
@@ -299,6 +300,7 @@ export function createGtmWriteTools(
         "Returns the version ID needed to publish. Always supply `notes` — this is the audit trail for the change.",
       inputSchema: gtmCreateVersionSchema as unknown as Record<string, unknown>,
       write: true,
+      annotations: writeAnnotations("Snapshot a workspace into a container version", false, false),
       handler: async (raw: unknown) => {
         const input = validateInput<{
           path?: string;
@@ -369,6 +371,7 @@ export function createGtmWriteTools(
         "REVERSIBLE: GTM keeps version history, so an earlier version can be republished to roll back.",
       inputSchema: gtmPublishVersionSchema as unknown as Record<string, unknown>,
       write: true,
+      annotations: writeAnnotations("Publish a container version to the live site", true, true),
       handler: async (raw: unknown) => {
         const input = validateInput<{
           versionPath?: string;
@@ -409,7 +412,7 @@ export function createGtmWriteTools(
         try {
           const client = await gtm();
 
-          // ---- DRY RUN (see docs/DESIGN.md §3) -------------------------------------
+          // ---- DRY RUN (see docs/DESIGN.md) -------------------------------------
           // No publish call is made on this path; a spy test asserts it.
           if (input.confirm !== true) {
             const candidateRes = await client.accounts.containers.versions.get({

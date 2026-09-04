@@ -36,8 +36,21 @@ jobs:
       - name: Contract tests
         run: npm test
 
-      - name: Confirm gate (D6)
+      - name: Confirm gate
         run: node scripts/verify-confirm-gate.mjs
+
+      # Runtime dependencies are what reach npm users. A high-or-worse advisory
+      # here fails the build.
+      - name: Audit runtime dependencies
+        run: npm audit --omit=dev --audit-level=high
+
+      # Dev dependencies never ship (see the `files` array), so a finding here
+      # is not a user-facing vulnerability — but it still affects contributors
+      # and this runner. Reported, not blocking, so an unrelated transitive
+      # advisory cannot wedge unrelated work.
+      - name: Audit dev dependencies (advisory only)
+        run: npm audit --audit-level=moderate || true
+        continue-on-error: true
 
       # Guards against a credential or fixture reaching the published tarball.
       - name: Verify package contents

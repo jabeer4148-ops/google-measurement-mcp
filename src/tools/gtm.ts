@@ -25,7 +25,7 @@ import {
   gtmListWorkspacesSchema,
   gtmWorkspaceEntitySchema,
 } from "../schemas/phase2.js";
-import type { ToolDefinition } from "../schemas/index.js";
+import { readAnnotations, type ToolDefinition } from "../schemas/index.js";
 
 interface WorkspaceEntityInput {
   path?: string;
@@ -72,6 +72,7 @@ export function createGtmTools(
     description,
     inputSchema: gtmWorkspaceEntitySchema as unknown as Record<string, unknown>,
     write: false,
+    annotations: readAnnotations(title),
     handler: async (raw: unknown) => {
       const input = validateInput<WorkspaceEntityInput>(raw, gtmWorkspaceEntitySchema, name);
       const ws = normalizeWorkspacePath(input, name);
@@ -95,6 +96,7 @@ export function createGtmTools(
         "Use this FIRST to discover accountId, then gtm_list_containers, then gtm_list_workspaces. Read-only.",
       inputSchema: gtmListAccountsSchema as unknown as Record<string, unknown>,
       write: false,
+      annotations: readAnnotations("List Tag Manager accounts"),
       handler: async (raw: unknown) => {
         const input = validateInput<{ limit?: number; pageToken?: string }>(
           raw,
@@ -127,6 +129,7 @@ export function createGtmTools(
         "needs, while `publicId` is the GTM-XXXXXXX string shown in the UI. Pass the numeric one. Read-only.",
       inputSchema: gtmListContainersSchema as unknown as Record<string, unknown>,
       write: false,
+      annotations: readAnnotations("List Tag Manager containers"),
       handler: async (raw: unknown) => {
         const input = validateInput<{ accountId: string; limit?: number; pageToken?: string }>(
           raw,
@@ -170,6 +173,7 @@ export function createGtmTools(
         "Accepts either a full container `path` or accountId + containerId (numeric internal ID). Read-only.",
       inputSchema: gtmListWorkspacesSchema as unknown as Record<string, unknown>,
       write: false,
+      annotations: readAnnotations("List Tag Manager workspaces"),
       handler: async (raw: unknown) => {
         const input = validateInput<{
           path?: string;

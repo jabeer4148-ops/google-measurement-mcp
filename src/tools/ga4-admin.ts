@@ -13,7 +13,7 @@ import {
   ga4ListAccountSummariesSchema,
   ga4PropertyOnlySchema,
 } from "../schemas/phase2.js";
-import type { ToolDefinition } from "../schemas/index.js";
+import { readAnnotations, type ToolDefinition } from "../schemas/index.js";
 
 interface PropertyOnlyInput {
   propertyId: string;
@@ -38,6 +38,7 @@ export function createGa4AdminTools(
         "Returns account name, display name, and for each property its ID and display name. Read-only.",
       inputSchema: ga4ListAccountSummariesSchema as unknown as Record<string, unknown>,
       write: false,
+      annotations: readAnnotations("List GA4 accounts and properties"),
       handler: async (raw: unknown) => {
         const input = validateInput<{ limit?: number; pageToken?: string }>(
           raw,
@@ -83,6 +84,7 @@ export function createGa4AdminTools(
         "Useful for discovering which custom dimensions exist before referencing them in ga4_run_report. Read-only.",
       inputSchema: ga4PropertyOnlySchema as unknown as Record<string, unknown>,
       write: false,
+      annotations: readAnnotations("List GA4 custom dimensions"),
       handler: async (raw: unknown) => {
         const input = validateInput<PropertyOnlyInput>(
           raw,
@@ -128,6 +130,7 @@ export function createGa4AdminTools(
         "Read-only.",
       inputSchema: ga4PropertyOnlySchema as unknown as Record<string, unknown>,
       write: false,
+      annotations: readAnnotations("List GA4 key events"),
       handler: async (raw: unknown) => {
         const input = validateInput<PropertyOnlyInput>(
           raw,

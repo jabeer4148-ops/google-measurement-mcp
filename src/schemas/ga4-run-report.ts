@@ -1,7 +1,7 @@
 /**
  * JSON Schema for ga4_run_report.
  *
- * Single source of truth (see docs/DESIGN.md §6): tool registration
+ * Single source of truth (see docs/DESIGN.md): tool registration
  * references this object; it is never redeclared inline at the call site.
  */
 

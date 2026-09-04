@@ -392,7 +392,7 @@ Expected unless you passed `--enable-write` or set `GMCP_ENABLE_WRITE=1`. Re-aut
 ```bash
 npm install
 npm run build
-npm test                              # 73 contract tests, no network, no credentials
+npm test                              # 78 contract tests, no network, no credentials
 node scripts/verify-confirm-gate.mjs  # 17 assertions on the publish gate
 ```
 

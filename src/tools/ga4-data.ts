@@ -13,7 +13,7 @@ import { ga4RunReportSchema, type Ga4RunReportInput } from "../schemas/ga4-run-r
 import { ga4RealtimeReportSchema } from "../schemas/phase2.js";
 import { validateInput, assertGa4Date } from "../lib/validate.js";
 import { normalizePropertyId } from "../lib/normalize.js";
-import type { ToolDefinition } from "../schemas/index.js";
+import { readAnnotations, type ToolDefinition } from "../schemas/index.js";
 
 /** GA4 accepts YYYY-MM-DD, 'today', 'yesterday', and 'NdaysAgo'. */
 const DATE_PATTERN = /^(\d{4}-\d{2}-\d{2}|today|yesterday|\d+daysAgo)$/;
@@ -78,6 +78,7 @@ export function createGa4DataTools(
         "Read-only.",
       inputSchema: ga4RunReportSchema as unknown as Record<string, unknown>,
       write: false,
+      annotations: readAnnotations("Run a GA4 report"),
       handler: async (raw: unknown) => {
         const input = validate(raw);
         const property = normalizePropertyId(input.propertyId, "ga4_run_report");
@@ -133,6 +134,7 @@ export function createGa4DataTools(
         "For anything older than 30 minutes use ga4_run_report instead. Read-only.",
       inputSchema: ga4RealtimeReportSchema as unknown as Record<string, unknown>,
       write: false,
+      annotations: readAnnotations("Run a GA4 realtime report"),
       handler: async (raw: unknown) => {
         const input = validateInput<{
           propertyId: string;

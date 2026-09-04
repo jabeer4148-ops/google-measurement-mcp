@@ -1,11 +1,11 @@
 # Testing and traceability
 
-**73 contract tests** across 3 files, plus **17 standalone assertions** on the publish confirm gate. No network, no credentials, runs anywhere including CI.
+**78 contract tests** across 3 files, plus **17 standalone assertions** on the publish confirm gate. No network, no credentials, runs anywhere including CI.
 
 Every tool has at least one covering test.
 
 ```bash
-npm test                              # 73 contract tests
+npm test                              # 78 contract tests
 node scripts/verify-confirm-gate.mjs  # 17 confirm-gate assertions
 ```
 
@@ -50,7 +50,7 @@ That distinction is the point. A tool description can promise anything; a test t
 | `ga4_update_key_event` | analyticsadmin v1beta | `properties.keyEvents.patch` | `analytics.edit` | Yes |
 | `gsc_submit_sitemap` | searchconsole v1 | `sitemaps.submit` | `webmasters` | Yes, from the GSC UI |
 | `gtm_create_tag` | tagmanager v2 | `…workspaces.tags.create` | `tagmanager.edit.containers` | Yes — workspace-only |
-| `gtm_update_tag` | tagmanager v2 | `…tags.get` + `…tags.update` | `tagmanager.edit.containers` | Yes — merges, see DESIGN.md §4 |
+| `gtm_update_tag` | tagmanager v2 | `…tags.get` + `…tags.update` | `tagmanager.edit.containers` | Yes — merges, see [DESIGN.md](DESIGN.md) |
 | `gtm_create_trigger` | tagmanager v2 | `…workspaces.triggers.create` | `tagmanager.edit.containers` | Yes — workspace-only |
 | `gtm_create_version` | tagmanager v2 | `…workspaces.create_version` | `tagmanager.edit.containerversions` | Safe — creating ≠ publishing |
 | `gtm_publish_version` | tagmanager v2 | `…versions.get` / `.live` / `.publish` | `tagmanager.publish` | Yes — via version history |
@@ -111,7 +111,28 @@ Stated rather than hidden.
 
 ---
 
-## 7. CI
+## 7. Dependency posture
+
+**Runtime dependencies are the only ones that reach users.** The `files` array ships `dist/`, `README.md` and `LICENSE` only — no tests, no scripts, no dev dependencies. A published tarball contains two runtime dependencies: `@modelcontextprotocol/sdk` and `googleapis`.
+
+CI enforces the distinction:
+
+- **Runtime deps** — `npm audit --omit=dev --audit-level=high` **fails the build.**
+- **Dev deps** — audited and reported, but non-blocking. A dev-only advisory is not a user-facing vulnerability, and an unrelated transitive finding should not wedge unrelated work.
+
+Non-blocking is not the same as ignored. A dev-only advisory still affects contributors and CI runners, and is worth fixing on its own timeline.
+
+### 7.1 Vitest — GHSA-5xrq-8626-4rwp
+
+Recorded because the remediation is not the obvious one.
+
+The advisory (CVE-2026-47429, CVSS 9.8) covers arbitrary file read and script execution when the **Vitest UI server** is listening. Affected users are those who explicitly expose the UI to the network with `--api.host`, or who run the Vitest UI or Browser Mode on Windows.
+
+**This project never runs the UI.** The scripts are `vitest run` and `vitest` (watch); neither starts the API server, which requires `--ui` or `--api`. Combined with dev-only scope, user-facing exposure is nil.
+
+**The non-obvious part:** the vulnerable range is `< 3.2.6`, and the 2.x line **ends at 2.1.9 with no patch**. A patch-level bump is impossible — clearing it requires a major upgrade. The dev dependency is therefore pinned at `^3.2.7`.
+
+## 8. CI
 
 `.github/workflows/ci.yml` runs on push and pull request against Node 20 and 22:
 
